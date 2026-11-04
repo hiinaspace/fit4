@@ -83,11 +83,14 @@ def codec_args(cand: Candidate, src: Source, kbps: float, final: bool, threads: 
             "-x264-params", x264p, "-threads", str(threads),
         ]  # fmt: skip
     if cand.codec == "vp9":
+        # cpu-used 1/2/3/4 measured XPSNR 32.95/32.90/33.27/33.20 at 4 MiB on
+        # swarm-4-full-small (2026-11-04): slower libvpx presets were not better,
+        # so finals reuse the screening preset and only tighten the size band.
         w = cand.width_for(src)
         tiles = max(0, min(2, int(math.log2(max(1, w // 256)))))
         return [
             "-c:v", "libvpx-vp9", "-b:v", b, "-deadline", "good",
-            "-cpu-used", "1" if final else "3", "-row-mt", "1",
+            "-cpu-used", "3", "-row-mt", "1",
             "-tile-columns", str(tiles), "-threads", str(threads),
             "-g", str(gop), "-auto-alt-ref", "6", "-lag-in-frames", "25",
             "-enable-tpl", "1", "-aq-mode", "0",

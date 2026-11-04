@@ -120,7 +120,11 @@ def encode_once(
     threads: int,
     audio: bool,
 ) -> int:
-    vf = norm_filter(src, cand.height, cand.fps)
+    # -color_* output flags alone left primaries/transfer "unknown" in the
+    # x264 mp4 (independent check, 2026-11-04); set them on the frames.
+    vf = norm_filter(src, cand.height, cand.fps) + (
+        ",setparams=range=tv:colorspace=bt709:color_primaries=bt709:color_trc=bt709"
+    )
     vargs = codec_args(cand, src, kbps, final, threads)
     log = out.with_suffix(".2pass")
     base = [

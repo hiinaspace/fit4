@@ -1,20 +1,35 @@
 [project]
 name = "fit4"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "Squeeze a video under an upload size limit at the best measured quality (x264/VP9 sweep, XPSNR scoring, A/B report)"
 readme = "README.md"
+license = "Unlicense"
+license-files = ["LICENSE"]
 authors = [
     { name = "Hiina", email = "hiina@hiina.space" }
 ]
 requires-python = ">=3.12"
 dependencies = []
+keywords = ["ffmpeg", "video", "x264", "vp9", "xpsnr", "encoding"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Video :: Conversion",
+]
+
+[project.urls]
+Homepage = "https://github.com/hiinaspace/fit4"
+Issues = "https://github.com/hiinaspace/fit4/issues"
 
 [project.scripts]
-fit4 = "fit4:main"
+fit4 = "fit4.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.13.4,<0.14.0"]
-build-backend = "uv_build"
+# Pure-Python backend: `uvx --from git+...` builds from source on every machine,
+# and uv_build fetches a native binary when the user's uv is outside its pin.
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
@@ -25,3 +40,6 @@ dev = [
 
 [tool.ruff]
 line-length = 120
+
+[tool.pytest.ini_options]
+markers = ["ffmpeg: runs a real (seconds-long) ffmpeg encode; skipped when ffmpeg lacks the needed features"]

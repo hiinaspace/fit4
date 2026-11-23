@@ -34,7 +34,8 @@ def grid(
 ) -> list[Candidate]:
     h_max = min(src.height, board.max_dim, int(board.max_dim * src.height / src.width))
     heights = sorted({(min(h_max, round(src.height * s)) // 2) * 2 for s in scales}, reverse=True)
-    heights = [h for h in heights if h >= 144]
+    # Skip scales below 144p, but never drop the largest (a tiny source still gets one).
+    heights = [h for h in heights if h >= 144] or heights[:1]
     rates = []
     for d in fps_divs:
         r = src.fps / d

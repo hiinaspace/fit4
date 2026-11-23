@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import math
-import subprocess
 import time
 from dataclasses import dataclass, field
 from fractions import Fraction
 from pathlib import Path
 
+from . import ff
 from .probe import Source
 
 # Audio bitrate reserved when the source has audio (kbps).
@@ -101,9 +101,9 @@ def codec_args(cand: Candidate, src: Source, kbps: float, final: bool, threads: 
 def audio_args(cand: Candidate, src: Source, audio: bool) -> list[str]:
     if not (audio and src.has_audio):
         return ["-an"]
-    if cand.codec == "x264":
-        return ["-c:a", "aac", "-b:a", f"{AUDIO_KBPS['x264']}k"]
-    return ["-c:a", "libopus", "-b:a", f"{AUDIO_KBPS['vp9']}k"]
+    # Upload targets want stereo at most; libopus also rejects some 5.1 layouts.
+    ch = ["-ac", str(min(2, src.audio_channels or 2))]
+    return ["-c:a", ff.AUDIO_ENCODERS[cand.codec], "-b:a", f"{AUDIO_KBPS[cand.codec]}k", *ch]
 
 
 def budget_kbps(src: Source, cand: Candidate, limit: int, audio: bool, margin: float = 0.985) -> float:
@@ -130,46 +130,10 @@ def encode_once(
     )
     vargs = codec_args(cand, src, kbps, final, threads)
     log = out.with_suffix(".2pass")
-    base = [
-        "ffmpeg",
-        "-v",
-        "error",
-        "-y",
-        "-i",
-        str(src.path),
-        "-vf",
-        vf,
-        *vargs,
-        *COLOR_TAGS,
-    ]
-    subprocess.run(
-        [
-            *base,
-            "-an",
-            "-pass",
-            "1",
-            "-passlogfile",
-            str(log),
-            "-f",
-            "null",
-            "/dev/null",
-        ],
-        check=True,
-    )
+    base = [*ff.FFMPEG, "-v", "error", "-y", "-i", str(src.path), "-vf", vf, *vargs, *COLOR_TAGS]
+    ff.run([*base, "-an", "-pass", "1", "-passlogfile", str(log), "-f", "null", "-"])
     mux = ["-movflags", "+faststart"] if cand.codec == "x264" else []
-    subprocess.run(
-        [
-            *base,
-            *audio_args(cand, src, audio),
-            "-pass",
-            "2",
-            "-passlogfile",
-            str(log),
-            *mux,
-            str(out),
-        ],
-        check=True,
-    )
+    ff.run([*base, *audio_args(cand, src, audio), "-pass", "2", "-passlogfile", str(log), *mux, str(out)])
     for p in out.parent.glob(log.name + "*"):
         p.unlink()
     return out.stat().st_size

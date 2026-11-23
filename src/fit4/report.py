@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import html
 import json
-import subprocess
 from pathlib import Path
 
+from . import ff
 from .metrics import distorted_filter, reference_filter
 from .probe import Source
 from .search import Trial
@@ -26,13 +26,12 @@ def pick_frames(per_frame: list[float], k: int = 3) -> list[int]:
 def extract(path: Path, filt: str, frames: list[int], dest: Path, name: str) -> list[str]:
     sel = "+".join(f"eq(n\\,{f})" for f in frames)
     pattern = dest / f"{name}-%d.webp"
-    subprocess.run(
+    ff.run(
         [
-            "ffmpeg", "-v", "error", "-y", "-i", str(path),
+            *ff.FFMPEG, "-v", "error", "-y", "-i", str(path),
             "-vf", f"{filt},select='{sel}'", "-fps_mode", "passthrough",
             "-c:v", "libwebp", "-lossless", "1", "-compression_level", "3", str(pattern),
         ],
-        check=True,
     )  # fmt: skip
     return [f"frames/{name}-{i + 1}.webp" for i in range(len(frames))]
 
@@ -113,7 +112,7 @@ def write(
             f"{', audio' if src.has_audio else ''}"
         ),
         limit=f"{limit:,}",
-        output=html.escape(str(output)),
+        output=html.escape(output.name),  # name only: reports get shared
         rows="".join(rows),
         frows="".join(frows),
         vids=vids,

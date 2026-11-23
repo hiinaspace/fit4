@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import re
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from . import ff
 from .encode import norm_filter
 from .probe import Source
 
@@ -41,24 +41,9 @@ def score(src: Source, dist: Path, stats: Path) -> Score:
         f"[d1][r1]ssim;"
         f"[d2][r2]xpsnr=shortest=1:stats_file={stats}"
     )
-    out = subprocess.run(
-        [
-            "ffmpeg",
-            "-hide_banner",
-            "-nostats",
-            "-i",
-            str(dist),
-            "-i",
-            str(src.path),
-            "-lavfi",
-            lavfi,
-            "-f",
-            "null",
-            "-",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    out = ff.run(
+        [*ff.FFMPEG, "-nostats", "-i", str(dist), "-i", str(src.path), "-lavfi", lavfi, "-f", "null", "-"],
+        capture=True,
     ).stderr
     m = re.findall(r"XPSNR\s+y:\s*([\d.inf]+)\s+u:\s*([\d.inf]+)\s+v:\s*([\d.inf]+)", out)
     if not m:

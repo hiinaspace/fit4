@@ -179,7 +179,7 @@ def run(args: argparse.Namespace) -> int:
         )
         return OK
     if src.size <= limit:
-        log("note: the source is under the limit already but needs re-encoding for format or size limits")
+        log("note: the source is under the limit, but its format or dimensions need a re-encode")
     if board.max_duration and src.duration > board.max_duration:
         log(f"warning: {src.duration:.0f}s exceeds {board.name}'s reported {board.max_duration:.0f}s max")
     ff.check(codecs, audio and src.has_audio)

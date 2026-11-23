@@ -72,7 +72,8 @@ def require_binaries() -> None:
 def check(codecs: Iterable[str], audio: bool) -> None:
     """Raise MissingFFmpeg naming every encoder/filter the sweep would need but lacks."""
     require_binaries()
-    version = run([*FFMPEG, "-version"], capture=True).stdout.splitlines()[0]
+    words = run([*FFMPEG, "-version"], capture=True).stdout.split()
+    version = f"ffmpeg {words[2]}" if len(words) > 2 else "this ffmpeg"
     enc = parse_listing(run([*FFMPEG, "-encoders"], capture=True).stdout)
     filt = parse_listing(run([*FFMPEG, "-filters"], capture=True).stdout)
     missing = missing_features(enc, filt, codecs, audio)
@@ -85,4 +86,4 @@ def check(codecs: Iterable[str], audio: bool) -> None:
         if any(m.startswith(("aac", "libopus")) for m in missing):
             hints.append("--no-audio drops the audio track")
         hint = f" ({'; '.join(hints)})" if hints else ""
-        raise MissingFFmpeg(f"{version!r} lacks: {', '.join(missing)}{hint}.")
+        raise MissingFFmpeg(f"{version} lacks: {', '.join(missing)}{hint}.")

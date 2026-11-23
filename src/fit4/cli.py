@@ -29,9 +29,10 @@ examples:
   fit4 clip.mp4 --codecs x264 --scales 1,0.667 --fps-divs 1 --finals 1
                                          quick: 2 screens + 1 final
 
-time: the default sweep is 16 screening encodes plus 2 slow finals. A 90 s
-1080p clip takes about 5-8 minutes on 16 cores. Cost scales with clip length
-and with the product of --codecs x --scales x --fps-divs.
+time: the default sweep is 16 screening encodes plus 2 slow finals. A 49 s
+1080p60 clip took 12 minutes on 14 cores, three quarters of it in VP9, so
+--codecs x264 is the biggest saving. Cost scales with clip length and with
+--codecs x --scales x --fps-divs.
 
 exit codes: 0 done (or nothing to do), 1 an encode failed or nothing fit,
 2 bad arguments or unusable input, 3 ffmpeg missing or lacking a feature,

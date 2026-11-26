@@ -23,7 +23,9 @@ def pick_frames(per_frame: list[float], k: int = 3) -> list[int]:
     return out
 
 
-def extract(path: Path, filt: str, frames: list[int], dest: Path, name: str, in_args: list[str] | None = None) -> list[str]:
+def extract(
+    path: Path, filt: str, frames: list[int], dest: Path, name: str, in_args: list[str] | None = None
+) -> list[str]:
     sel = "+".join(f"eq(n\\,{f})" for f in frames)
     pattern = dest / f"{name}-%d.webp"
     ff.run(
@@ -75,7 +77,9 @@ def write(
     frames_dir = work / "frames"
     frames_dir.mkdir(exist_ok=True)
     idx = pick_frames(chosen.score.per_frame_y)
-    views: dict[str, list[str]] = {"source": extract(src.path, reference_filter(src), idx, frames_dir, "source", src.in_args)}
+    views: dict[str, list[str]] = {
+        "source": extract(src.path, reference_filter(src), idx, frames_dir, "source", src.in_args)
+    }
     for t in finals:
         views[t.cand.label()] = extract(t.enc.path, distorted_filter(src), idx, frames_dir, t.cand.label())
 

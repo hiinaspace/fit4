@@ -115,9 +115,7 @@ def trim(src: Source, start: float = 0.0, duration: float | None = None, end: fl
     if stop <= start:
         raise BadInput(f"--end {stop:g}s is not after --start {start:g}s")
     length = stop - start
-    return replace(
-        src, start=start, duration=length, nb_frames=max(2, round(length * float(src.fps))), trimmed=True
-    )
+    return replace(src, start=start, duration=length, nb_frames=max(2, round(length * float(src.fps))), trimmed=True)
 
 
 def probe(path: Path) -> Source:

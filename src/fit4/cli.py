@@ -6,10 +6,12 @@ import argparse
 import json
 import re
 import subprocess
-import sys
 import time
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+
+from rich.console import Console
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
 from . import ff, report
 from .boards import BOARDS, Board
@@ -146,8 +148,27 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
+CONSOLE = Console(stderr=True, highlight=False)
+
+
 def log(msg: str) -> None:
-    print(msg, file=sys.stderr, flush=True)
+    CONSOLE.print(msg, markup=False, soft_wrap=True)
+
+
+def run_stage(name: str, src, cands, limit, work, **kw):
+    """run_trials under a progress bar (one per stage, so the ETA isn't skewed by slower final presets)."""
+    with Progress(
+        TextColumn("{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+        TextColumn("eta"),
+        TimeRemainingColumn(),
+        console=CONSOLE,
+        transient=True,
+    ) as prog:
+        task = prog.add_task(name, total=len(cands))
+        return run_trials(src, cands, limit, work, log=log, on_done=lambda: prog.advance(task), **kw)
 
 
 def already_fits(src: Source, board: Board, limit: int, audio: bool) -> bool:
@@ -216,10 +237,10 @@ def run(args: argparse.Namespace) -> int:
     cands = grid(src, board, codecs, args.scales, args.fps_divs)
     t0 = time.monotonic()
     log(f"screening {len(cands)} candidates ({args.jobs} at a time, fast presets)")
-    screen = run_trials(src, cands, limit, work, final=False, jobs=args.jobs, audio=audio, log=log)
+    screen = run_stage("screening", src, cands, limit, work, final=False, jobs=args.jobs, audio=audio)
     fin = pick_finalists(screen, args.finals)
     log(f"final encodes: {', '.join(c.label() for c in fin)}")
-    finals = run_trials(src, fin, limit, work, final=True, jobs=args.jobs, audio=audio, log=log)
+    finals = run_stage("final", src, fin, limit, work, final=True, jobs=args.jobs, audio=audio)
     chosen = max(finals, key=lambda t: t.score.primary)
 
     output = args.output or args.input.with_name(f"{stem}.fit4.{EXT[chosen.cand.codec]}")

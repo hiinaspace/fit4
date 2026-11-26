@@ -54,6 +54,7 @@ def run_trials(
     jobs: int,
     audio: bool,
     log: Callable[[str], None],
+    on_done: Callable[[], None] = lambda: None,
 ) -> list[Trial]:
     threads = max(2, (os.cpu_count() or 4) // jobs)
     low, tries = (0.975, 4) if final else (0.95, 3)
@@ -75,6 +76,7 @@ def run_trials(
             f"  {c.label():<18} {enc.size / 1e6:6.3f} MB  {enc.kbps:5.0f} kbps  "
             f"XPSNR {sc.xpsnr_yuv:6.3f}  SSIM {sc.ssim_y:.4f}  ({enc.seconds:.0f}s, {len(enc.attempts)} tries)"
         )
+        on_done()
         return Trial(enc, sc)
 
     with ThreadPoolExecutor(max_workers=jobs) as ex:

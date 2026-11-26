@@ -42,7 +42,20 @@ def score(src: Source, dist: Path, stats: Path) -> Score:
         f"[d2][r2]xpsnr=shortest=1:stats_file={stats}"
     )
     out = ff.run(
-        [*ff.FFMPEG, "-nostats", "-i", str(dist), *src.in_args, "-i", str(src.path), "-lavfi", lavfi, "-f", "null", "-"],
+        [
+            *ff.FFMPEG,
+            "-nostats",
+            "-i",
+            str(dist),
+            *src.in_args,
+            "-i",
+            str(src.path),
+            "-lavfi",
+            lavfi,
+            "-f",
+            "null",
+            "-",
+        ],
         capture=True,
     ).stderr
     m = re.findall(r"XPSNR\s+y:\s*([\d.inf]+)\s+u:\s*([\d.inf]+)\s+v:\s*([\d.inf]+)", out)

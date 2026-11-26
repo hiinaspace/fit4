@@ -37,7 +37,10 @@ def host_info(ncpu: int) -> dict:
         cpu_max = open("/sys/fs/cgroup/cpu.max").read().strip()
     except OSError:
         cpu_max = None
-    ff = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True).stdout.splitlines()[:1]
+    try:
+        ff = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True).stdout.splitlines()[:1]
+    except OSError:
+        ff = []
     return {"node": platform.node(), "cpu_model": model, "os_cpu_count": os.cpu_count(),
             "cc_job_cpu": os.environ.get("CC_JOB_CPU"), "cgroup_cpu_max": cpu_max, "fit4_cpu_count": ncpu,
             "ffmpeg": ff[0] if ff else None, "python": platform.python_version()}

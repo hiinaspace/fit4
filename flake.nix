@@ -24,6 +24,7 @@
           # headless has libx264, libvpx-vp9, libopus, aac, libwebp and the
           # xpsnr filter at a third of ffmpeg-full's closure.
           pkgs.ffmpeg-headless
+          pkgs.ffmpeg-headless.bin # the batch image links only the default output, which has no binaries
         ];
         passthru.ccJobEnv = {
           PYTHONPATH = "/w/src";

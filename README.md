@@ -88,7 +88,8 @@ the slow part: VP9 used three quarters of that run's encode time, so
 | `--fps-divs 1` | `1,2` | skip half-frame-rate candidates; halves the screen |
 | `--scales 1,0.667` | `1,0.833,0.667,0.5` | fewer heights |
 | `--finals 1` | `2` | one slow final instead of two |
-| `--jobs N` | `4` | encodes run at once; CPU threads are split between them |
+| `--jobs N` | CPU budget | most encodes at once. Default: VP9 jobs take 4 threads each and as many run side by side as the CPU budget (cores, or a cgroup/`local-job` quota) allows; x264 jobs fill gaps |
+| `--flat-layout` | off | the old scheduling: `--jobs` (default 4) equal workers sharing the CPUs evenly |
 
 `fit4 clip.mp4 --codecs x264 --scales 1,0.667 --fps-divs 1 --finals 1` runs 2
 screens and 1 final.

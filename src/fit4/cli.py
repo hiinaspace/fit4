@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import time
@@ -16,6 +17,7 @@ from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, T
 from . import ff, report
 from .boards import BOARDS, Board
 from .encode import EXT, Candidate, FirstPassCache, budget_kbps
+from .layout import available_cpus, plan_layout
 from .probe import BadInput, Source, probe, trim
 from .search import grid, pick_finalists, run_trials
 
@@ -137,7 +139,16 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--finals", type=positive, default=2, help="slow-preset encodes of the leaders (default: %(default)s)"
     )
-    ap.add_argument("--jobs", type=positive, default=4, help="encodes run at once; CPU threads are split between them")
+    ap.add_argument(
+        "--jobs",
+        type=positive,
+        help="most encodes at once (default: as many as the CPU budget allows; with --flat-layout, 4)",
+    )
+    ap.add_argument(
+        "--flat-layout",
+        action="store_true",
+        help="old scheduling: --jobs equal workers sharing the CPUs evenly, instead of VP9 jobs of 4 threads side by side",
+    )
     ap.add_argument("--start", type=parse_time, default=0.0, help="trim: start here (seconds, M:SS or H:MM:SS)")
     ap.add_argument("--duration", type=parse_time, help="trim: encode only this much from --start (e.g. 51)")
     ap.add_argument("--end", type=parse_time, help="trim: stop here instead of using --duration")
@@ -236,13 +247,16 @@ def run(args: argparse.Namespace) -> int:
     work.mkdir(parents=True, exist_ok=True)
     cands = grid(src, board, codecs, args.scales, args.fps_divs)
     t0 = time.monotonic()
-    log(f"screening {len(cands)} candidates ({args.jobs} at a time, fast presets)")
+    layout = plan_layout(
+        os.cpu_count() or 4 if args.flat_layout else available_cpus(), codecs, args.jobs, args.flat_layout
+    )
+    log(f"screening {len(cands)} candidates (fast presets; {layout.describe()})")
     cache = FirstPassCache(work / ".firstpass")
     try:
-        screen = run_stage("screening", src, cands, limit, work, final=False, jobs=args.jobs, audio=audio, cache=cache)
+        screen = run_stage("screening", src, cands, limit, work, final=False, layout=layout, audio=audio, cache=cache)
         fin = pick_finalists(screen, args.finals)
         log(f"final encodes: {', '.join(c.label() for c in fin)}")
-        finals = run_stage("final", src, fin, limit, work, final=True, jobs=args.jobs, audio=audio, cache=cache)
+        finals = run_stage("final", src, fin, limit, work, final=True, layout=layout, audio=audio, cache=cache)
     finally:
         log(f"first passes: {cache.runs} run, {cache.hits} reused")
         cache.clear()

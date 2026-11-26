@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import os
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
 
 from .boards import Board
 from .encode import Candidate, EncodeResult, FirstPassCache, encode_to_size
+from .layout import Layout, run_weighted
 from .metrics import Score, score
 from .probe import Source
 
@@ -51,16 +50,15 @@ def run_trials(
     work: Path,
     *,
     final: bool,
-    jobs: int,
+    layout: Layout,
     audio: bool,
     log: Callable[[str], None],
     on_done: Callable[[], None] = lambda: None,
     cache: FirstPassCache | None = None,
 ) -> list[Trial]:
-    threads = max(2, (os.cpu_count() or 4) // jobs)
     low, tries = (0.975, 4) if final else (0.95, 3)
 
-    def one(c: Candidate) -> Trial | None:
+    def one(c: Candidate, threads: int) -> Trial | None:
         try:
             enc = encode_to_size(
                 src,
@@ -86,8 +84,11 @@ def run_trials(
         on_done()
         return Trial(enc, sc)
 
-    with ThreadPoolExecutor(max_workers=jobs) as ex:
-        trials = [t for t in ex.map(one, cands) if t is not None]
+    # Slowest first (VP9 before x264) so short jobs fill the tail; results come back in `cands` order.
+    order = sorted(range(len(cands)), key=lambda i: cands[i].codec != "vp9")
+    done = run_weighted([cands[i] for i in order], one, layout, lambda c: c.codec)
+    by_index = dict(zip(order, done))
+    trials = [t for i in range(len(cands)) if (t := by_index[i]) is not None]
     if not trials:
         raise RuntimeError("every candidate failed to reach the size limit; try a larger --limit or a shorter clip")
     return trials

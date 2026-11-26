@@ -51,7 +51,7 @@ Smoke test (window w1-mechvr, 6-CPU pod) against the local run:
 
 - Same winner (vp9-1080p60, identical file size 4,100,063 B) and the same two finalists. The screening ranking by
   XPSNR is identical across all 16 candidates.
-- All 8 vp9 candidates match exactly (size, XPSNR, SSIM). 3 of 8 x264 candidates match exactly; the others differ by
+- All 8 vp9 candidates match exactly (size, XPSNR, SSIM). 2 of 8 x264 screening candidates match exactly and the other 6 (and the x264 finalist) differ by
   a few hundred to a few thousand bytes and up to 0.01 dB. x264 is not bit-reproducible across these two machines
   (different CPU model and build), so expect this noise in x264 sizes.
 - One x264 candidate (720p60) lands 100 KB lower: the first try came out just over the limit on the cluster, so it

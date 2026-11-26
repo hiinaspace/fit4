@@ -1,0 +1,177 @@
+diff --git a/src/fit4/cli.py b/src/fit4/cli.py
+index 459ac56..9fa212f 100644
+--- a/src/fit4/cli.py
++++ b/src/fit4/cli.py
+@@ -13,7 +13,7 @@ from pathlib import Path
+ from rich.console import Console
+ from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
+ 
+-from . import ff, report
++from . import dump, ff, report
+ from .boards import BOARDS, Board
+ from .encode import EXT, Candidate, budget_kbps
+ from .probe import BadInput, Source, probe, trim
+@@ -237,11 +237,18 @@ def run(args: argparse.Namespace) -> int:
+     cands = grid(src, board, codecs, args.scales, args.fps_divs)
+     t0 = time.monotonic()
+     log(f"screening {len(cands)} candidates ({args.jobs} at a time, fast presets)")
++    dump.META.update(input=str(args.input), start=args.start, duration=args.duration, limit=limit, jobs=args.jobs,
++                     ncpu=__import__("os").cpu_count(), loadavg_start=__import__("os").getloadavg())
++    _ts = time.monotonic()
+     screen = run_stage("screening", src, cands, limit, work, final=False, jobs=args.jobs, audio=audio)
++    dump.META["screen_wall_s"] = round(time.monotonic() - _ts, 1)
++    _ts = time.monotonic()
+     fin = pick_finalists(screen, args.finals)
+     log(f"final encodes: {', '.join(c.label() for c in fin)}")
+     finals = run_stage("final", src, fin, limit, work, final=True, jobs=args.jobs, audio=audio)
++    dump.META["final_wall_s"] = round(time.monotonic() - _ts, 1)
+     chosen = max(finals, key=lambda t: t.score.primary)
++    dump.META["winner"] = chosen.cand.label()
+ 
+     output = args.output or args.input.with_name(f"{stem}.fit4.{EXT[chosen.cand.codec]}")
+     output.write_bytes(chosen.enc.path.read_bytes())
+@@ -275,7 +282,10 @@ def run(args: argparse.Namespace) -> int:
+ def main(argv: list[str] | None = None) -> int:
+     args = build_parser().parse_args(argv)
+     try:
+-        return run(args)
++        try:
++            return run(args)
++        finally:
++            dump.write()
+     except BadInput as e:
+         log(f"fit4: {e}")
+         return USAGE
+diff --git a/src/fit4/dump.py b/src/fit4/dump.py
+new file mode 100644
+index 0000000..52e0c85
+--- /dev/null
++++ b/src/fit4/dump.py
+@@ -0,0 +1,40 @@
++"""Baseline-only instrumentation: collect per-try / per-candidate timings into a JSON file (FIT4_DUMP=path)."""
++
++from __future__ import annotations
++
++import json
++import os
++import threading
++import time
++
++_lock = threading.Lock()
++RECORDS: dict[tuple[str, bool], dict] = {}
++META: dict = {"t_start": time.time()}
++tls = threading.local()
++
++
++def enabled() -> bool:
++    return bool(os.environ.get("FIT4_DUMP"))
++
++
++def add(label: str, final: bool, rec: dict) -> None:
++    with _lock:
++        RECORDS[(label, final)] = rec
++
++
++def update(label: str, final: bool, **kw) -> None:
++    with _lock:
++        RECORDS.setdefault((label, final), {}).update(kw)
++
++
++def write() -> None:
++    path = os.environ.get("FIT4_DUMP")
++    if not path:
++        return
++    META["t_end"] = time.time()
++    META["wall_s"] = round(META["t_end"] - META["t_start"], 1)
++    META["loadavg_end"] = os.getloadavg()
++    with _lock:
++        recs = sorted(RECORDS.values(), key=lambda r: (r.get("final", False), r.get("t_begin", 0)))
++    with open(path, "w") as f:
++        json.dump({"meta": META, "candidates": recs}, f, indent=1, default=str)
+diff --git a/src/fit4/encode.py b/src/fit4/encode.py
+index 71d57fc..25db410 100644
+--- a/src/fit4/encode.py
++++ b/src/fit4/encode.py
+@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
+ from fractions import Fraction
+ from pathlib import Path
+ 
+-from . import ff
++from . import dump, ff
+ from .probe import Source
+ 
+ # Audio bitrate reserved when the source has audio (kbps).
+@@ -131,9 +131,13 @@ def encode_once(
+     vargs = codec_args(cand, src, kbps, final, threads)
+     log = out.with_suffix(".2pass")
+     base = [*ff.FFMPEG, "-v", "error", "-y", *src.in_args, "-i", str(src.path), "-vf", vf, *vargs, *COLOR_TAGS]
++    _t = time.monotonic()
+     ff.run([*base, "-an", "-pass", "1", "-passlogfile", str(log), "-f", "null", "-"])
++    _p1 = time.monotonic() - _t
+     mux = ["-movflags", "+faststart"] if cand.codec == "x264" else []
++    _t = time.monotonic()
+     ff.run([*base, *audio_args(cand, src, audio), "-pass", "2", "-passlogfile", str(log), *mux, str(out)])
++    dump.tls.passes = (round(_p1, 1), round(time.monotonic() - _t, 1))
+     for p in out.parent.glob(log.name + "*"):
+         p.unlink()
+     return out.stat().st_size
+@@ -162,9 +166,18 @@ def encode_to_size(
+     attempts: list[tuple[float, int]] = []
+     best: tuple[float, int, Path] | None = None
+     t0 = time.monotonic()
++    _tries: list[dict] = []
++    _rec = {
++        "label": cand.label(), "codec": cand.codec, "height": cand.height, "fps": float(cand.fps),
++        "final": final, "threads": threads, "t_begin": round(time.time() - dump.META["t_start"], 1), "tries": _tries,
++    }
+     for i in range(max_tries):
+         path = out.with_name(f"{out.stem}.try{i}{out.suffix}")
++        _ts = time.monotonic()
+         size = encode_once(src, cand, kbps, path, final=final, threads=threads, audio=audio)
++        _p = getattr(dump.tls, "passes", (None, None))
++        _tries.append({"target_kbps": round(kbps, 1), "size": size, "seconds": round(time.monotonic() - _ts, 1),
++                       "pass1_s": _p[0], "pass2_s": _p[1], "fits": size <= limit})
+         attempts.append((kbps, size))
+         if size <= limit and (best is None or size > best[1]):
+             best = (kbps, size, path)
+@@ -174,6 +187,8 @@ def encode_to_size(
+         target = limit * (1 + low) / 2
+         kbps *= target / size
+     t = time.monotonic() - t0
++    _rec.update(seconds=round(t, 1), t_end=round(time.time() - dump.META["t_start"], 1), failed_to_fit=best is None)
++    dump.add(cand.label(), final, _rec)
+     if best is None:
+         raise RuntimeError(f"{cand.label()}: never got under {limit} bytes: {attempts}")
+     kbps_b, size_b, path_b = best
+diff --git a/src/fit4/search.py b/src/fit4/search.py
+index 3d20c78..61f0b97 100644
+--- a/src/fit4/search.py
++++ b/src/fit4/search.py
+@@ -3,6 +3,7 @@
+ from __future__ import annotations
+ 
+ import os
++import time
+ from collections.abc import Callable
+ from concurrent.futures import ThreadPoolExecutor
+ from dataclasses import dataclass
+@@ -10,6 +11,7 @@ from fractions import Fraction
+ from pathlib import Path
+ 
+ from .boards import Board
++from . import dump
+ from .encode import Candidate, EncodeResult, encode_to_size
+ from .metrics import Score, score
+ from .probe import Source
+@@ -76,7 +78,11 @@ def run_trials(
+             log(f"  {c.label():<18} skipped: {e}")
+             on_done()
+             return None
++        _t = time.monotonic()
+         sc = score(src, enc.path, enc.path.with_suffix(".xpsnr.txt"))
++        dump.update(c.label(), final, score_seconds=round(time.monotonic() - _t, 1), size=enc.size,
++                    kbps=round(enc.kbps, 1), xpsnr_yuv=round(sc.xpsnr_yuv, 3), xpsnr_y=round(sc.xpsnr_y, 3),
++                    ssim_y=round(sc.ssim_y, 5))
+         log(
+             f"  {c.label():<18} {enc.size / 1e6:6.3f} MB  {enc.kbps:5.0f} kbps  "
+             f"XPSNR {sc.xpsnr_yuv:6.3f}  SSIM {sc.ssim_y:.4f}  ({enc.seconds:.0f}s, {len(enc.attempts)} tries)"

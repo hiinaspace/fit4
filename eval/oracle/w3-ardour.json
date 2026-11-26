@@ -1,0 +1,862 @@
+{
+ "window": {
+  "id": "w3-ardour",
+  "path": "/mnt/pool/videos/ardour_ambisonics.mp4",
+  "start": 60,
+  "duration": 16,
+  "split": "heldout",
+  "kind": "screencast / UI-heavy",
+  "description": "DAW (Ardour) ambisonics screencast, 720p60, dense small UI, tiny animated panels, mostly static"
+ },
+ "exit": 0,
+ "locked_wall_s": 139.3,
+ "waited_for_lock_s": 10.1,
+ "source": "local copy of the pool file (staged before the lock)",
+ "stderr_tail": [
+  "w3-ardour.src.mp4: 1280x720 60.0004fps 16.0s (trimmed from 60s) 139.1MB +audio; limit 4,194,304 B \u2192 2097 kbps total",
+  "screening 16 candidates (4 at a time, fast presets)",
+  "  x264-720p30.0002    3.710 MB   2535 kbps  XPSNR 57.026  SSIM 0.9995  (10s, 3 tries)",
+  "  x264-600p30.0002    3.789 MB   2428 kbps  XPSNR 34.856  SSIM 0.9254  (12s, 3 tries)",
+  "  x264-720p60.0004    4.172 MB   1794 kbps  XPSNR 53.046  SSIM 0.9992  (15s, 3 tries)",
+  "  x264-600p60.0004    4.119 MB   1742 kbps  XPSNR 34.767  SSIM 0.9252  (17s, 3 tries)",
+  "  x264-480p30.0002    2.509 MB   3374 kbps  XPSNR 30.991  SSIM 0.8652  (7s, 3 tries)",
+  "  x264-480p60.0004    3.377 MB   3073 kbps  XPSNR 30.949  SSIM 0.8650  (10s, 3 tries)",
+  "  x264-360p60.0004    2.058 MB   4110 kbps  XPSNR 26.192  SSIM 0.7739  (7s, 3 tries)",
+  "  x264-360p30.0002    1.531 MB   5492 kbps  XPSNR 26.211  SSIM 0.7741  (4s, 3 tries)",
+  "  vp9-720p30.0002     4.185 MB   3660 kbps  XPSNR 57.702  SSIM 0.9995  (22s, 2 tries)",
+  "  vp9-600p30.0002     3.956 MB   3420 kbps  XPSNR 34.857  SSIM 0.9254  (27s, 3 tries)",
+  "  vp9-600p60.0004     4.015 MB   3494 kbps  XPSNR 34.771  SSIM 0.9252  (45s, 3 tries)",
+  "  vp9-480p30.0002     2.947 MB   4748 kbps  XPSNR 30.993  SSIM 0.8652  (18s, 3 tries)",
+  "  vp9-720p60.0004     3.156 MB   3178 kbps  XPSNR 53.088  SSIM 0.9992  (55s, 3 tries)",
+  "  vp9-480p60.0004     3.690 MB   4340 kbps  XPSNR 30.950  SSIM 0.8650  (28s, 3 tries)",
+  "  vp9-360p30.0002     1.899 MB  10216 kbps  XPSNR 26.212  SSIM 0.7741  (10s, 3 tries)",
+  "  vp9-360p60.0004     2.370 MB   6768 kbps  XPSNR 26.192  SSIM 0.7739  (16s, 3 tries)",
+  "",
+  "final encodes: vp9-720p30.0002, x264-720p30.0002",
+  "  x264-720p30.0002    3.603 MB   3253 kbps  XPSNR 57.027  SSIM 0.9995  (18s, 4 tries)",
+  "  vp9-720p30.0002     4.176 MB   3643 kbps  XPSNR 57.677  SSIM 0.9995  (30s, 3 tries)",
+  "",
+  "chose vp9-720p30.0002: 4,176,220 B, XPSNR 57.68 (139s total)",
+  "  report: /tmp/claude-1000/sc/local/w3-ardour/report.html"
+ ],
+ "dump": {
+  "meta": {
+   "t_start": 1795720891.6203477,
+   "input": "/tmp/claude-1000/sc/local/w3-ardour.src.mp4",
+   "start": 60.0,
+   "duration": 16.0,
+   "limit": 4194304,
+   "jobs": 4,
+   "ncpu": 16,
+   "loadavg_start": [
+    6.845703125,
+    8.8701171875,
+    9.22705078125
+   ],
+   "screen_wall_s": 103.9,
+   "final_wall_s": 33.1,
+   "winner": "vp9-720p30.0002",
+   "t_end": 1795721030.8331387,
+   "wall_s": 139.2,
+   "loadavg_end": [
+    8.89111328125,
+    9.66162109375,
+    9.5234375
+   ]
+  },
+  "candidates": [
+   {
+    "label": "x264-720p30.0002",
+    "codec": "x264",
+    "height": 720,
+    "fps": 30.000185716540845,
+    "final": false,
+    "threads": 4,
+    "t_begin": 0.4,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 3667170,
+      "seconds": 3.8,
+      "pass1_s": 1.6,
+      "pass2_s": 2.2,
+      "fits": true
+     },
+     {
+      "target_kbps": 2289.8,
+      "size": 3694160,
+      "seconds": 3.3,
+      "pass1_s": 1.2,
+      "pass2_s": 2.1,
+      "fits": true
+     },
+     {
+      "target_kbps": 2534.8,
+      "size": 3710328,
+      "seconds": 3.4,
+      "pass1_s": 1.3,
+      "pass2_s": 2.1,
+      "fits": true
+     }
+    ],
+    "seconds": 10.5,
+    "t_end": 10.9,
+    "failed_to_fit": false,
+    "score_seconds": 5.8,
+    "size": 3710328,
+    "kbps": 2534.8,
+    "xpsnr_yuv": 57.026,
+    "xpsnr_y": 55.269,
+    "ssim_y": 0.99951
+   },
+   {
+    "label": "x264-600p30.0002",
+    "codec": "x264",
+    "height": 600,
+    "fps": 30.000185716540845,
+    "final": false,
+    "threads": 4,
+    "t_begin": 0.4,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 3754149,
+      "seconds": 4.3,
+      "pass1_s": 1.9,
+      "pass2_s": 2.4,
+      "fits": true
+     },
+     {
+      "target_kbps": 2236.8,
+      "size": 3767998,
+      "seconds": 3.9,
+      "pass1_s": 1.3,
+      "pass2_s": 2.6,
+      "fits": true
+     },
+     {
+      "target_kbps": 2427.6,
+      "size": 3789420,
+      "seconds": 3.4,
+      "pass1_s": 1.1,
+      "pass2_s": 2.3,
+      "fits": true
+     }
+    ],
+    "seconds": 11.6,
+    "t_end": 12.0,
+    "failed_to_fit": false,
+    "score_seconds": 6.2,
+    "size": 3789420,
+    "kbps": 2427.6,
+    "xpsnr_yuv": 34.856,
+    "xpsnr_y": 29.602,
+    "ssim_y": 0.92543
+   },
+   {
+    "label": "x264-720p60.0004",
+    "codec": "x264",
+    "height": 720,
+    "fps": 60.00037143308169,
+    "final": false,
+    "threads": 4,
+    "t_begin": 0.4,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 4469314,
+      "seconds": 5.9,
+      "pass1_s": 2.4,
+      "pass2_s": 3.5,
+      "fits": false
+     },
+     {
+      "target_kbps": 1878.8,
+      "size": 4282394,
+      "seconds": 5.4,
+      "pass1_s": 1.9,
+      "pass2_s": 3.4,
+      "fits": false
+     },
+     {
+      "target_kbps": 1794.2,
+      "size": 4171620,
+      "seconds": 4.2,
+      "pass1_s": 1.5,
+      "pass2_s": 2.7,
+      "fits": true
+     }
+    ],
+    "seconds": 15.5,
+    "t_end": 15.9,
+    "failed_to_fit": false,
+    "score_seconds": 6.3,
+    "size": 4171620,
+    "kbps": 1794.2,
+    "xpsnr_yuv": 53.046,
+    "xpsnr_y": 50.894,
+    "ssim_y": 0.99918
+   },
+   {
+    "label": "x264-600p60.0004",
+    "codec": "x264",
+    "height": 600,
+    "fps": 60.00037143308169,
+    "final": false,
+    "threads": 4,
+    "t_begin": 0.4,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 4606005,
+      "seconds": 6.7,
+      "pass1_s": 2.4,
+      "pass2_s": 4.3,
+      "fits": false
+     },
+     {
+      "target_kbps": 1823.1,
+      "size": 4278841,
+      "seconds": 6.0,
+      "pass1_s": 1.9,
+      "pass2_s": 4.1,
+      "fits": false
+     },
+     {
+      "target_kbps": 1742.4,
+      "size": 4118585,
+      "seconds": 4.5,
+      "pass1_s": 1.1,
+      "pass2_s": 3.4,
+      "fits": true
+     }
+    ],
+    "seconds": 17.2,
+    "t_end": 17.6,
+    "failed_to_fit": false,
+    "score_seconds": 7.9,
+    "size": 4118585,
+    "kbps": 1742.4,
+    "xpsnr_yuv": 34.767,
+    "xpsnr_y": 29.568,
+    "ssim_y": 0.92518
+   },
+   {
+    "label": "x264-480p60.0004",
+    "codec": "x264",
+    "height": 480,
+    "fps": 60.00037143308169,
+    "final": false,
+    "threads": 4,
+    "t_begin": 16.7,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 3334330,
+      "seconds": 2.9,
+      "pass1_s": 1.0,
+      "pass2_s": 1.9,
+      "fits": true
+     },
+     {
+      "target_kbps": 2518.4,
+      "size": 3351842,
+      "seconds": 3.5,
+      "pass1_s": 1.4,
+      "pass2_s": 2.0,
+      "fits": true
+     },
+     {
+      "target_kbps": 3072.6,
+      "size": 3377176,
+      "seconds": 3.5,
+      "pass1_s": 1.5,
+      "pass2_s": 2.0,
+      "fits": true
+     }
+    ],
+    "seconds": 9.8,
+    "t_end": 26.5,
+    "failed_to_fit": false,
+    "score_seconds": 5.8,
+    "size": 3377176,
+    "kbps": 3072.6,
+    "xpsnr_yuv": 30.949,
+    "xpsnr_y": 25.752,
+    "ssim_y": 0.86503
+   },
+   {
+    "label": "x264-480p30.0002",
+    "codec": "x264",
+    "height": 480,
+    "fps": 30.000185716540845,
+    "final": false,
+    "threads": 4,
+    "t_begin": 18.2,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2488838,
+      "seconds": 2.1,
+      "pass1_s": 0.8,
+      "pass2_s": 1.3,
+      "fits": true
+     },
+     {
+      "target_kbps": 3373.9,
+      "size": 2508837,
+      "seconds": 2.1,
+      "pass1_s": 0.9,
+      "pass2_s": 1.2,
+      "fits": true
+     },
+     {
+      "target_kbps": 5499.6,
+      "size": 2507948,
+      "seconds": 2.3,
+      "pass1_s": 0.9,
+      "pass2_s": 1.4,
+      "fits": true
+     }
+    ],
+    "seconds": 6.6,
+    "t_end": 24.7,
+    "failed_to_fit": false,
+    "score_seconds": 6.1,
+    "size": 2508837,
+    "kbps": 3373.9,
+    "xpsnr_yuv": 30.991,
+    "xpsnr_y": 25.768,
+    "ssim_y": 0.86523
+   },
+   {
+    "label": "x264-360p60.0004",
+    "codec": "x264",
+    "height": 360,
+    "fps": 60.00037143308169,
+    "final": false,
+    "threads": 4,
+    "t_begin": 22.2,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2042969,
+      "seconds": 2.8,
+      "pass1_s": 1.2,
+      "pass2_s": 1.6,
+      "fits": true
+     },
+     {
+      "target_kbps": 4110.3,
+      "size": 2057975,
+      "seconds": 2.4,
+      "pass1_s": 1.0,
+      "pass2_s": 1.4,
+      "fits": true
+     },
+     {
+      "target_kbps": 8167.6,
+      "size": 2057491,
+      "seconds": 2.1,
+      "pass1_s": 0.8,
+      "pass2_s": 1.3,
+      "fits": true
+     }
+    ],
+    "seconds": 7.3,
+    "t_end": 29.5,
+    "failed_to_fit": false,
+    "score_seconds": 5.1,
+    "size": 2057975,
+    "kbps": 4110.3,
+    "xpsnr_yuv": 26.192,
+    "xpsnr_y": 20.702,
+    "ssim_y": 0.77394
+   },
+   {
+    "label": "x264-360p30.0002",
+    "codec": "x264",
+    "height": 360,
+    "fps": 30.000185716540845,
+    "final": false,
+    "threads": 4,
+    "t_begin": 25.5,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 1528939,
+      "seconds": 1.7,
+      "pass1_s": 0.8,
+      "pass2_s": 0.9,
+      "fits": true
+     },
+     {
+      "target_kbps": 5492.2,
+      "size": 1531068,
+      "seconds": 1.4,
+      "pass1_s": 0.5,
+      "pass2_s": 0.8,
+      "fits": true
+     },
+     {
+      "target_kbps": 14669.4,
+      "size": 1528694,
+      "seconds": 1.4,
+      "pass1_s": 0.6,
+      "pass2_s": 0.8,
+      "fits": true
+     }
+    ],
+    "seconds": 4.5,
+    "t_end": 29.9,
+    "failed_to_fit": false,
+    "score_seconds": 4.7,
+    "size": 1531068,
+    "kbps": 5492.2,
+    "xpsnr_yuv": 26.211,
+    "xpsnr_y": 20.706,
+    "ssim_y": 0.77409
+   },
+   {
+    "label": "vp9-720p60.0004",
+    "codec": "vp9",
+    "height": 720,
+    "fps": 60.00037143308169,
+    "final": false,
+    "threads": 4,
+    "t_begin": 30.8,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2642533,
+      "seconds": 17.1,
+      "pass1_s": 2.5,
+      "pass2_s": 14.6,
+      "fits": true
+     },
+     {
+      "target_kbps": 3177.7,
+      "size": 3155830,
+      "seconds": 18.7,
+      "pass1_s": 2.2,
+      "pass2_s": 16.5,
+      "fits": true
+     },
+     {
+      "target_kbps": 4117.8,
+      "size": 4667951,
+      "seconds": 18.8,
+      "pass1_s": 2.2,
+      "pass2_s": 16.6,
+      "fits": false
+     }
+    ],
+    "seconds": 54.6,
+    "t_end": 85.4,
+    "failed_to_fit": false,
+    "score_seconds": 4.5,
+    "size": 3155830,
+    "kbps": 3177.7,
+    "xpsnr_yuv": 53.088,
+    "xpsnr_y": 50.927,
+    "ssim_y": 0.99918
+   },
+   {
+    "label": "vp9-720p30.0002",
+    "codec": "vp9",
+    "height": 720,
+    "fps": 30.000185716540845,
+    "final": false,
+    "threads": 4,
+    "t_begin": 32.3,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2294589,
+      "seconds": 10.5,
+      "pass1_s": 1.3,
+      "pass2_s": 9.1,
+      "fits": true
+     },
+     {
+      "target_kbps": 3659.6,
+      "size": 4185482,
+      "seconds": 11.4,
+      "pass1_s": 1.2,
+      "pass2_s": 10.1,
+      "fits": true
+     }
+    ],
+    "seconds": 21.8,
+    "t_end": 54.1,
+    "failed_to_fit": false,
+    "score_seconds": 4.5,
+    "size": 4185482,
+    "kbps": 3659.6,
+    "xpsnr_yuv": 57.702,
+    "xpsnr_y": 55.776,
+    "ssim_y": 0.99951
+   },
+   {
+    "label": "vp9-600p60.0004",
+    "codec": "vp9",
+    "height": 600,
+    "fps": 60.00037143308169,
+    "final": false,
+    "threads": 4,
+    "t_begin": 34.5,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2331610,
+      "seconds": 14.0,
+      "pass1_s": 2.0,
+      "pass2_s": 12.0,
+      "fits": true
+     },
+     {
+      "target_kbps": 3601.4,
+      "size": 4215285,
+      "seconds": 15.7,
+      "pass1_s": 1.8,
+      "pass2_s": 13.9,
+      "fits": false
+     },
+     {
+      "target_kbps": 3493.9,
+      "size": 4015009,
+      "seconds": 15.1,
+      "pass1_s": 2.0,
+      "pass2_s": 13.1,
+      "fits": true
+     }
+    ],
+    "seconds": 44.8,
+    "t_end": 79.3,
+    "failed_to_fit": false,
+    "score_seconds": 5.2,
+    "size": 4015009,
+    "kbps": 3493.9,
+    "xpsnr_yuv": 34.771,
+    "xpsnr_y": 29.566,
+    "ssim_y": 0.92519
+   },
+   {
+    "label": "vp9-600p30.0002",
+    "codec": "vp9",
+    "height": 600,
+    "fps": 30.000185716540845,
+    "final": false,
+    "threads": 4,
+    "t_begin": 34.6,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2601451,
+      "seconds": 8.5,
+      "pass1_s": 1.3,
+      "pass2_s": 7.2,
+      "fits": true
+     },
+     {
+      "target_kbps": 3227.9,
+      "size": 3860202,
+      "seconds": 8.6,
+      "pass1_s": 1.0,
+      "pass2_s": 7.6,
+      "fits": true
+     },
+     {
+      "target_kbps": 3419.6,
+      "size": 3956436,
+      "seconds": 9.6,
+      "pass1_s": 1.8,
+      "pass2_s": 7.8,
+      "fits": true
+     }
+    ],
+    "seconds": 26.7,
+    "t_end": 61.3,
+    "failed_to_fit": false,
+    "score_seconds": 4.9,
+    "size": 3956436,
+    "kbps": 3419.6,
+    "xpsnr_yuv": 34.857,
+    "xpsnr_y": 29.602,
+    "ssim_y": 0.92543
+   },
+   {
+    "label": "vp9-480p60.0004",
+    "codec": "vp9",
+    "height": 480,
+    "fps": 60.00037143308169,
+    "final": false,
+    "threads": 4,
+    "t_begin": 58.6,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2150337,
+      "seconds": 10.4,
+      "pass1_s": 1.5,
+      "pass2_s": 9.0,
+      "fits": true
+     },
+     {
+      "target_kbps": 3905.0,
+      "size": 3679248,
+      "seconds": 8.7,
+      "pass1_s": 1.2,
+      "pass2_s": 7.5,
+      "fits": true
+     },
+     {
+      "target_kbps": 4340.4,
+      "size": 3690208,
+      "seconds": 9.2,
+      "pass1_s": 1.3,
+      "pass2_s": 7.9,
+      "fits": true
+     }
+    ],
+    "seconds": 28.3,
+    "t_end": 87.0,
+    "failed_to_fit": false,
+    "score_seconds": 5.0,
+    "size": 3690208,
+    "kbps": 4340.4,
+    "xpsnr_yuv": 30.95,
+    "xpsnr_y": 25.751,
+    "ssim_y": 0.86503
+   },
+   {
+    "label": "vp9-480p30.0002",
+    "codec": "vp9",
+    "height": 480,
+    "fps": 30.000185716540845,
+    "final": false,
+    "threads": 4,
+    "t_begin": 66.2,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2512844,
+      "seconds": 6.4,
+      "pass1_s": 0.9,
+      "pass2_s": 5.5,
+      "fits": true
+     },
+     {
+      "target_kbps": 3341.7,
+      "size": 2878003,
+      "seconds": 5.7,
+      "pass1_s": 0.7,
+      "pass2_s": 5.0,
+      "fits": true
+     },
+     {
+      "target_kbps": 4748.3,
+      "size": 2947186,
+      "seconds": 6.0,
+      "pass1_s": 0.8,
+      "pass2_s": 5.2,
+      "fits": true
+     }
+    ],
+    "seconds": 18.0,
+    "t_end": 84.2,
+    "failed_to_fit": false,
+    "score_seconds": 4.9,
+    "size": 2947186,
+    "kbps": 4748.3,
+    "xpsnr_yuv": 30.993,
+    "xpsnr_y": 25.767,
+    "ssim_y": 0.86523
+   },
+   {
+    "label": "vp9-360p60.0004",
+    "codec": "vp9",
+    "height": 360,
+    "fps": 60.00037143308169,
+    "final": false,
+    "threads": 4,
+    "t_begin": 84.5,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2169542,
+      "seconds": 5.8,
+      "pass1_s": 1.3,
+      "pass2_s": 4.6,
+      "fits": true
+     },
+     {
+      "target_kbps": 3870.5,
+      "size": 2338600,
+      "seconds": 5.1,
+      "pass1_s": 0.9,
+      "pass2_s": 4.2,
+      "fits": true
+     },
+     {
+      "target_kbps": 6768.2,
+      "size": 2369502,
+      "seconds": 4.9,
+      "pass1_s": 1.0,
+      "pass2_s": 3.9,
+      "fits": true
+     }
+    ],
+    "seconds": 15.9,
+    "t_end": 100.4,
+    "failed_to_fit": false,
+    "score_seconds": 3.8,
+    "size": 2369502,
+    "kbps": 6768.2,
+    "xpsnr_yuv": 26.192,
+    "xpsnr_y": 20.701,
+    "ssim_y": 0.77395
+   },
+   {
+    "label": "vp9-360p30.0002",
+    "codec": "vp9",
+    "height": 360,
+    "fps": 30.000185716540845,
+    "final": false,
+    "threads": 4,
+    "t_begin": 89.0,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 1803588,
+      "seconds": 3.6,
+      "pass1_s": 0.6,
+      "pass2_s": 3.0,
+      "fits": true
+     },
+     {
+      "target_kbps": 4655.8,
+      "size": 1863799,
+      "seconds": 3.3,
+      "pass1_s": 0.5,
+      "pass2_s": 2.8,
+      "fits": true
+     },
+     {
+      "target_kbps": 10215.5,
+      "size": 1899182,
+      "seconds": 3.4,
+      "pass1_s": 0.7,
+      "pass2_s": 2.6,
+      "fits": true
+     }
+    ],
+    "seconds": 10.2,
+    "t_end": 99.3,
+    "failed_to_fit": false,
+    "score_seconds": 3.7,
+    "size": 1899182,
+    "kbps": 10215.5,
+    "xpsnr_yuv": 26.212,
+    "xpsnr_y": 20.705,
+    "ssim_y": 0.7741
+   },
+   {
+    "label": "x264-720p30.0002",
+    "codec": "x264",
+    "height": 720,
+    "fps": 30.000185716540845,
+    "final": true,
+    "threads": 4,
+    "t_begin": 104.2,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 3521575,
+      "seconds": 4.6,
+      "pass1_s": 1.7,
+      "pass2_s": 3.0,
+      "fits": true
+     },
+     {
+      "target_kbps": 2415.1,
+      "size": 3555664,
+      "seconds": 4.3,
+      "pass1_s": 1.3,
+      "pass2_s": 3.0,
+      "fits": true
+     },
+     {
+      "target_kbps": 2813.2,
+      "size": 3581537,
+      "seconds": 4.5,
+      "pass1_s": 1.4,
+      "pass2_s": 3.1,
+      "fits": true
+     },
+     {
+      "target_kbps": 3253.4,
+      "size": 3603465,
+      "seconds": 4.3,
+      "pass1_s": 1.4,
+      "pass2_s": 2.9,
+      "fits": true
+     }
+    ],
+    "seconds": 17.7,
+    "t_end": 121.9,
+    "failed_to_fit": false,
+    "score_seconds": 3.7,
+    "size": 3603465,
+    "kbps": 3253.4,
+    "xpsnr_yuv": 57.027,
+    "xpsnr_y": 55.297,
+    "ssim_y": 0.99952
+   },
+   {
+    "label": "vp9-720p30.0002",
+    "codec": "vp9",
+    "height": 720,
+    "fps": 30.000185716540845,
+    "final": true,
+    "threads": 4,
+    "t_begin": 104.2,
+    "tries": [
+     {
+      "target_kbps": 2053.4,
+      "size": 2294589,
+      "seconds": 10.1,
+      "pass1_s": 1.2,
+      "pass2_s": 8.9,
+      "fits": true
+     },
+     {
+      "target_kbps": 3706.5,
+      "size": 4214202,
+      "seconds": 10.2,
+      "pass1_s": 1.2,
+      "pass2_s": 9.0,
+      "fits": false
+     },
+     {
+      "target_kbps": 3642.9,
+      "size": 4176220,
+      "seconds": 9.4,
+      "pass1_s": 1.1,
+      "pass2_s": 8.3,
+      "fits": true
+     }
+    ],
+    "seconds": 29.7,
+    "t_end": 133.9,
+    "failed_to_fit": false,
+    "score_seconds": 3.5,
+    "size": 4176220,
+    "kbps": 3642.9,
+    "xpsnr_yuv": 57.677,
+    "xpsnr_y": 55.758,
+    "ssim_y": 0.99951
+   }
+  ]
+ }
+}

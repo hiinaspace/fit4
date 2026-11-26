@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fit4 · editor layout (A1)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <main id="left">
+    <div id="stage"><video id="vid" src="../data/proxy.mp4" preload="auto" playsinline></video><div id="vlabel">preview: 540p30 proxy, not the encode</div></div>
+    <div id="transport">
+      <button id="play" title="Space">Play</button>
+      <button id="playpart" title="Play the selected part, stop at its end">Play part</button>
+      <span id="clock" class="mono">0.0 / 119.7 s</span>
+      <span class="sp"></span>
+      <span class="hint">Space play · M moment · K keep range · B boring range · I / O part edges · ← → step (Shift 1 s) · Del delete · Z undo</span>
+    </div>
+    <section id="cmdbox">
+      <div class="boxhead"><b>Commands</b><span class="sp"></span>
+        <button id="copy">Copy</button>
+        <button id="encode" disabled title="Running encodes from the GUI comes later">Encode</button></div>
+      <pre id="cmds" class="mono"></pre>
+    </section>
+  </main>
+
+  <aside id="side">
+    <section id="settings">
+      <label>Limit <input id="limit" type="number" min="0.5" step="0.5" value="4"> MiB</label>
+      <label class="chk"><input id="audio" type="checkbox"> Audio</label>
+      <span class="sp"></span>
+      <button id="addpart" title="New part at the playhead">+ Part</button>
+    </section>
+    <section id="props" hidden></section>
+    <section id="parts"></section>
+    <section id="ladder">
+      <div class="boxhead"><b id="ladtitle">What dB looks like</b><span class="sp"></span><span id="ladnote"></span></div>
+      <div id="chips"></div>
+      <div id="tiles"><div class="tile" id="t1"></div><div class="tile" id="t2"></div></div>
+      <div class="cap"><span>rock texture</span><span>enemy</span></div>
+    </section>
+  </aside>
+
+  <section id="timeline">
+    <div id="tbar">
+      <button id="split2" title="Best 2-way split of the selected part">Split in 2</button>
+      <button id="split3" title="Best 3-way split of the selected part">Split in 3</button>
+      <span class="div"></span>
+      <span class="seg" id="anchor"><button data-v="head" class="on" title="Curve: quality if a part started or ended at the playhead and ran to each point">from playhead</button><button data-v="part" title="Curve: quality if the selected part started where it does and ended at each point">from part start</button></span>
+      <span id="fitsout"></span>
+      <span class="sp"></span>
+      <button id="demo" title="Load a small set of demo marks">Demo marks</button>
+      <button id="clearm" title="Remove all marks (Z undoes)" hidden>Clear marks</button>
+      <span class="legend">cheap <i class="lg c1"></i> costly content</span>
+    </div>
+    <div id="track">
+      <div id="ruler"></div>
+      <div id="film"></div>
+      <canvas id="aud"></canvas><span id="audtag">audio</span>
+      <canvas id="cost"></canvas>
+      <div id="mlane"></div>
+      <canvas id="qc"></canvas>
+      <div id="lane"><div id="plane"></div></div>
+      <div id="bands"></div>
+      <div id="pbands"></div>
+      <div id="mover"></div>
+      <div id="head"><b></b></div>
+    </div>
+    <div id="srow">
+      <span class="slab r">one short sharp clip</span>
+      <div class="sl"><div class="ticks" id="ticks"></div><input id="slider" type="range" min="0" max="0" step="1" value="0" disabled></div>
+      <span class="slab">everything marked · more clips · rougher</span>
+      <span id="readout"></span>
+      <span class="sp"></span>
+      <button id="clearpins" hidden></button>
+      <button id="accept" disabled title="Turn the proposed clips into parts">Accept proposal</button>
+    </div>
+  </section>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

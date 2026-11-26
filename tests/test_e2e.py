@@ -20,8 +20,8 @@ why = _ffmpeg_ok()
 pytestmark = [pytest.mark.ffmpeg, pytest.mark.skipif(why is not None, reason=f"needs a full ffmpeg: {why}")]
 
 
-def make_clip(path, *, audio: bool, seconds: int = 3):
-    args = [*ff.FFMPEG, "-v", "error", "-y", "-f", "lavfi", "-i", f"testsrc2=s=320x180:r=24:d={seconds}"]
+def make_clip(path, *, audio: bool, seconds: int = 3, size: str = "320x180"):
+    args = [*ff.FFMPEG, "-v", "error", "-y", "-f", "lavfi", "-i", f"testsrc2=s={size}:r=24:d={seconds}"]
     if audio:
         args += ["-f", "lavfi", "-i", f"sine=f=440:d={seconds}", "-c:a", "aac"]
     ff.run([*args, "-c:v", "libx264", "-preset", "ultrafast", "-qp", "0", "-pix_fmt", "yuv420p", str(path)])
@@ -72,3 +72,30 @@ def test_too_long_for_limit_exits_2(tmp_path, capsys):
     make_clip(clip, audio=True, seconds=2)
     assert cli.main([str(clip), "--limit", "10KB"]) == cli.USAGE
     assert "--no-audio" in capsys.readouterr().err
+
+
+def test_probe_prunes_and_writes_its_decisions(tmp_path, capsys):
+    clip = tmp_path / "clip.mp4"
+    make_clip(clip, audio=False, seconds=12, size="640x360")
+    limit = 150_000
+    rc = cli.main(
+        [str(clip), "--limit", str(limit), "--scales", "1,0.5", "--fps-divs", "1", "--finals", "1",
+         "--prune-keep", "1", "--prune-margin", "0"]
+    )  # fmt: skip
+    err = capsys.readouterr().err
+    assert rc == 0, err
+    work = tmp_path / "clip.fit4.d"
+    decisions = json.loads((work / "prune.json").read_text())
+    assert len(decisions) == 4 and 1 <= sum(d["keep"] for d in decisions) < 4
+    assert all(d["reason"] for d in decisions) and (work / "probe.json").exists()
+    screens = {r["label"] for r in json.loads((work / "results.json").read_text()) if r["stage"] == "screen"}
+    assert screens == {d["label"] for d in decisions if d["keep"]}
+    assert "skip:" in err and "first passes:" in err
+
+
+def test_full_grid_flag_skips_the_probe(tmp_path, capsys):
+    clip = tmp_path / "clip.mp4"
+    make_clip(clip, audio=False, seconds=12)
+    rc = cli.main([str(clip), "--limit", "150000", "--scales", "1", "--fps-divs", "1", "--finals", "1", "--full-grid"])
+    assert rc == 0, capsys.readouterr().err
+    assert not (tmp_path / "clip.fit4.d" / "prune.json").exists()

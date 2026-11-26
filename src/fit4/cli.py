@@ -14,7 +14,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
-from . import ff, report
+from . import fastprobe, ff, preflight, prune, report
 from .boards import BOARDS, Board
 from .encode import EXT, Candidate, FirstPassCache, budget_kbps
 from .layout import available_cpus, plan_layout
@@ -23,6 +23,8 @@ from .search import grid, pick_finalists, run_trials
 
 # Exit codes (also in --help and the README).
 OK, FAILED, USAGE, NO_FFMPEG, INTERRUPTED = 0, 1, 2, 3, 130
+# Shorter clips screen the whole grid: the probe would cost about as much as it saves.
+PROBE_MIN_SECONDS = 10.0
 # Below this video bitrate neither encoder produces anything watchable.
 MIN_VIDEO_KBPS = 30
 
@@ -152,6 +154,30 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--start", type=parse_time, default=0.0, help="trim: start here (seconds, M:SS or H:MM:SS)")
     ap.add_argument("--duration", type=parse_time, help="trim: encode only this much from --start (e.g. 51)")
     ap.add_argument("--end", type=parse_time, help="trim: stop here instead of using --duration")
+    ap.add_argument(
+        "--full-grid",
+        action="store_true",
+        help="screen every candidate: skip the pre-flight probe and its pruning (the old behaviour)",
+    )
+    ap.add_argument(
+        "--prune-margin",
+        type=float,
+        default=prune.DEFAULT_MARGIN_DB,
+        metavar="DB",
+        help="screen candidates the probe predicts within this many dB of the best (default: %(default)s)",
+    )
+    ap.add_argument(
+        "--prune-keep",
+        type=positive,
+        default=prune.DEFAULT_MIN_KEEP,
+        metavar="N",
+        help="but always screen at least the best N predicted (default: %(default)s)",
+    )
+    ap.add_argument(
+        "--probe-only",
+        action="store_true",
+        help="run the pre-flight probe, write probe.json and the pruning decisions to the work directory, and stop",
+    )
     ap.add_argument("--no-audio", action="store_true", help="drop the audio track (frees its bits for video)")
     ap.add_argument("--force", action="store_true", help="re-encode even if the source already fits")
     ap.add_argument("--work", type=Path, help="work and report directory; default <input>.fit4.d next to the input")
@@ -209,6 +235,41 @@ def codecs_for(args: argparse.Namespace, board: Board) -> list[str]:
     return codecs
 
 
+def preflight_prune(
+    src: Source, cands: list[Candidate], limit: int, work: Path, layout, audio: bool, args: argparse.Namespace
+) -> tuple[list[Candidate], list[Candidate]]:
+    """Run the fast probe and split the grid into (screen these, skipped). Falls back to the full grid on failure."""
+    t0 = time.monotonic()
+    audio_kbps = preflight.audio_kbps_for(src, audio)
+    try:
+        fp = fastprobe.run_fast_probe(src, cands, limit, work / "probe", layout, audio_kbps=audio_kbps, log=log)
+    except (subprocess.CalledProcessError, RuntimeError) as e:
+        log(f"probe failed ({e}); screening the full grid")
+        return cands, []
+    (work / "probe.json").write_text(fp.probe.to_json())
+    decisions = prune.decide(
+        fp.probe, cands, limit, audio_kbps=audio_kbps, offsets=fastprobe.OFFSET_DB,
+        margin=args.prune_margin, min_keep=args.prune_keep, unprobed=fp.unprobed,
+    )  # fmt: skip
+    kept = [d.cand for d in decisions if d.keep]
+    log(f"probe: {time.monotonic() - t0:.0f}s; keeping {len(kept)} of {len(cands)} candidates")
+    for d in sorted(decisions, key=lambda d: (not d.keep, -(d.predicted or -1e9))):
+        log("  " + d.line())
+    (work / "prune.json").write_text(
+        json.dumps(
+            [
+                {"label": d.cand.label(), "keep": d.keep, "reason": d.reason, "predicted": d.predicted}
+                for d in decisions
+            ],
+            indent=1,
+        )
+    )
+    if not kept:
+        log("probe kept nothing; screening the full grid")
+        return cands, []
+    return kept, [d.cand for d in decisions if not d.keep]
+
+
 def run(args: argparse.Namespace) -> int:
     board = BOARDS[args.board]
     limit = args.limit or board.limit_bytes
@@ -247,13 +308,30 @@ def run(args: argparse.Namespace) -> int:
     work.mkdir(parents=True, exist_ok=True)
     cands = grid(src, board, codecs, args.scales, args.fps_divs)
     t0 = time.monotonic()
-    layout = plan_layout(
-        os.cpu_count() or 4 if args.flat_layout else available_cpus(), codecs, args.jobs, args.flat_layout
-    )
+    cpus = (os.cpu_count() or 4) if args.flat_layout else available_cpus()
+    layout = plan_layout(cpus, codecs, args.jobs, args.flat_layout)
+    skipped: list[Candidate] = []
+    if args.probe_only or not (args.full_grid or src.duration < PROBE_MIN_SECONDS):
+        kept, skipped = preflight_prune(src, cands, limit, work, layout, audio, args)
+        if args.probe_only:
+            return OK
+        cands = kept
+    elif not args.full_grid:
+        log(f"clip under {PROBE_MIN_SECONDS:g}s: screening the full grid")
     log(f"screening {len(cands)} candidates (fast presets; {layout.describe()})")
     cache = FirstPassCache(work / ".firstpass")
     try:
-        screen = run_stage("screening", src, cands, limit, work, final=False, layout=layout, audio=audio, cache=cache)
+        try:
+            screen = run_stage(
+                "screening", src, cands, limit, work, final=False, layout=layout, audio=audio, cache=cache
+            )
+        except RuntimeError:
+            if not skipped:
+                raise
+            log(f"no pruned candidate fit; screening the {len(skipped)} the probe skipped")
+            screen = run_stage(
+                "screening", src, skipped, limit, work, final=False, layout=layout, audio=audio, cache=cache
+            )
         fin = pick_finalists(screen, args.finals)
         log(f"final encodes: {', '.join(c.label() for c in fin)}")
         finals = run_stage("final", src, fin, limit, work, final=True, layout=layout, audio=audio, cache=cache)

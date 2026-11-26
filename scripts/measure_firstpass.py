@@ -38,17 +38,37 @@ with tempfile.TemporaryDirectory(dir="/tmp") as td:
             t_p1 = time.monotonic() - t0
             encode.run_first_pass(src, cand, kb_b, td / "fpB", final=final, threads=threads)
             outs = {}
-            for name, prefix, kb in (("fresh_B", "fpB", kb_b), ("reuse_A_for_B", "fpA", kb_b), ("fresh_A", "fpA", kb_a)):
+            for name, prefix, kb in (
+                ("fresh_B", "fpB", kb_b),
+                ("reuse_A_for_B", "fpA", kb_b),
+                ("fresh_A", "fpA", kb_a),
+            ):
                 out = td / f"{codec}{final}.{name}.{'webm' if codec == 'vp9' else 'mp4'}"
                 t0 = time.monotonic()
                 base = encode._video_cmd(src, cand, kb, final, threads)
                 mux = ["-movflags", "+faststart"] if codec == "x264" else []
                 encode.ff.run([*base, "-an", "-pass", "2", "-passlogfile", str(td / prefix), *mux, str(out)])
-                outs[name] = (out.stat().st_size, sha(out), time.monotonic() - t0, score(src, out, out.with_suffix('.x.txt')).xpsnr_yuv)
+                outs[name] = (
+                    out.stat().st_size,
+                    sha(out),
+                    time.monotonic() - t0,
+                    score(src, out, out.with_suffix(".x.txt")).xpsnr_yuv,
+                )
             # same stats rerun twice: is pass 2 itself deterministic?
             out2 = td / "again.webm"
             base = encode._video_cmd(src, cand, kb_b, final, threads)
-            encode.ff.run([*base, "-an", "-pass", "2", "-passlogfile", str(td / "fpB"), *(["-movflags", "+faststart"] if codec == "x264" else []), str(out2.with_suffix(".webm" if codec == "vp9" else ".mp4"))])
+            encode.ff.run(
+                [
+                    *base,
+                    "-an",
+                    "-pass",
+                    "2",
+                    "-passlogfile",
+                    str(td / "fpB"),
+                    *(["-movflags", "+faststart"] if codec == "x264" else []),
+                    str(out2.with_suffix(".webm" if codec == "vp9" else ".mp4")),
+                ]
+            )
             again = out2.with_suffix(".webm" if codec == "vp9" else ".mp4")
             print(f"{codec} final={final}: pass1 {t_p1:.1f}s")
             for k, v in outs.items():

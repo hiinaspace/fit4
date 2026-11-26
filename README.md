@@ -89,10 +89,30 @@ the slow part: VP9 used three quarters of that run's encode time, so
 | `--scales 1,0.667` | `1,0.833,0.667,0.5` | fewer heights |
 | `--finals 1` | `2` | one slow final instead of two |
 | `--jobs N` | CPU budget | most encodes at once. Default: VP9 jobs take 4 threads each and as many run side by side as the CPU budget (cores, or a cgroup/`local-job` quota) allows; x264 jobs fill gaps |
+| `--full-grid` | off | screen every candidate instead of the ones the pre-flight probe keeps (below) |
+| `--prune-margin DB` | `1.5` | screen candidates predicted within this many dB of the best |
+| `--prune-keep N` | `4` | ...but always at least the best N predicted |
+| `--probe-only` | off | run the probe, write `probe.json` and `prune.json` into the work directory, stop |
 | `--flat-layout` | off | the old scheduling: `--jobs` (default 4) equal workers sharing the CPUs evenly |
 
 `fit4 clip.mp4 --codecs x264 --scales 1,0.667 --fps-divs 1 --finals 1` runs 2
 screens and 1 final.
+
+### Pre-flight probe and pruning
+
+Clips of 10 s or more first get a short probe (a few seconds of sample slices,
+encoded at a few CRFs with fast settings, plus a per-second cost timeline).
+From it fit4 predicts each candidate's XPSNR at the limit and screens only the
+candidates within `--prune-margin` dB of the best (at least `--prune-keep`).
+VP9 candidates whose budget is under 1.6x libvpx's CRF-63 bitrate are dropped
+outright: libvpx 2-pass cannot get under the limit there. Every skipped
+candidate and its reason is logged and written to `prune.json`; if nothing
+pruned-in fits, the skipped ones are screened afterwards. `--full-grid` turns
+all of this off.
+
+If a VP9 candidate still ends over the limit with the screening flags, it gets
+one more try with `-cpu-used 2`, which lowers libvpx's bitrate floor on noisy
+footage.
 
 ## What the report shows
 

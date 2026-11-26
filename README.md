@@ -145,6 +145,12 @@ uv run pytest        # pure tests, plus a few seconds of real encodes when FFmpe
 uv run ruff check && uv run ruff format --check && uv run ty check
 ```
 
+`flake.nix` has a dev shell (`nix develop`) with Python 3.12, uv and
+`ffmpeg-headless` (libx264, libvpx-vp9, libopus, aac, xpsnr). Its Python has
+rich and pytest baked in, so the shell also works as an offline batch image:
+run `python -m fit4 ...` or `python -m pytest` with `PYTHONPATH=src` rather
+than `uv run`, which would try to sync from PyPI.
+
 No runtime dependencies beyond the Python standard library and FFmpeg.
 
 ## License

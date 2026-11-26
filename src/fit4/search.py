@@ -10,7 +10,7 @@ from fractions import Fraction
 from pathlib import Path
 
 from .boards import Board
-from .encode import Candidate, EncodeResult, encode_to_size
+from .encode import Candidate, EncodeResult, FirstPassCache, encode_to_size
 from .metrics import Score, score
 from .probe import Source
 
@@ -55,6 +55,7 @@ def run_trials(
     audio: bool,
     log: Callable[[str], None],
     on_done: Callable[[], None] = lambda: None,
+    cache: FirstPassCache | None = None,
 ) -> list[Trial]:
     threads = max(2, (os.cpu_count() or 4) // jobs)
     low, tries = (0.975, 4) if final else (0.95, 3)
@@ -71,6 +72,7 @@ def run_trials(
                 audio=audio,
                 low=low,
                 max_tries=tries,
+                cache=cache,
             )
         except RuntimeError as e:  # one candidate that can't reach the limit shouldn't sink the sweep
             log(f"  {c.label():<18} skipped: {e}")

@@ -15,7 +15,7 @@ from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, T
 
 from . import ff, report
 from .boards import BOARDS, Board
-from .encode import EXT, Candidate, budget_kbps
+from .encode import EXT, Candidate, FirstPassCache, budget_kbps
 from .probe import BadInput, Source, probe, trim
 from .search import grid, pick_finalists, run_trials
 
@@ -237,10 +237,15 @@ def run(args: argparse.Namespace) -> int:
     cands = grid(src, board, codecs, args.scales, args.fps_divs)
     t0 = time.monotonic()
     log(f"screening {len(cands)} candidates ({args.jobs} at a time, fast presets)")
-    screen = run_stage("screening", src, cands, limit, work, final=False, jobs=args.jobs, audio=audio)
-    fin = pick_finalists(screen, args.finals)
-    log(f"final encodes: {', '.join(c.label() for c in fin)}")
-    finals = run_stage("final", src, fin, limit, work, final=True, jobs=args.jobs, audio=audio)
+    cache = FirstPassCache(work / ".firstpass")
+    try:
+        screen = run_stage("screening", src, cands, limit, work, final=False, jobs=args.jobs, audio=audio, cache=cache)
+        fin = pick_finalists(screen, args.finals)
+        log(f"final encodes: {', '.join(c.label() for c in fin)}")
+        finals = run_stage("final", src, fin, limit, work, final=True, jobs=args.jobs, audio=audio, cache=cache)
+    finally:
+        log(f"first passes: {cache.runs} run, {cache.hits} reused")
+        cache.clear()
     chosen = max(finals, key=lambda t: t.score.primary)
 
     output = args.output or args.input.with_name(f"{stem}.fit4.{EXT[chosen.cand.codec]}")

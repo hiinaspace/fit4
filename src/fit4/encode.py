@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
+import shutil
+import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from fractions import Fraction
 from pathlib import Path
@@ -113,6 +117,94 @@ def budget_kbps(src: Source, cand: Candidate, limit: int, audio: bool, margin: f
     return bits / src.duration / 1000
 
 
+def _video_cmd(src: Source, cand: Candidate, kbps: float, final: bool, threads: int) -> list[str]:
+    """ffmpeg command up to (not including) the pass flags, audio and output."""
+    # -color_* output flags alone left primaries/transfer "unknown" in the
+    # x264 mp4 (independent check, 2026-11-04); set them on the frames.
+    vf = norm_filter(src, cand.height, cand.fps) + (
+        ",setparams=range=tv:colorspace=bt709:color_primaries=bt709:color_trc=bt709"
+    )
+    vargs = codec_args(cand, src, kbps, final, threads)
+    return [*ff.FFMPEG, "-v", "error", "-y", *src.in_args, "-i", str(src.path), "-vf", vf, *vargs, *COLOR_TAGS]
+
+
+def first_pass_key(src: Source, cand: Candidate, final: bool, threads: int) -> str:
+    """Identity of a first-pass stats file: everything the analysis sees except the target bitrate.
+
+    libvpx's first pass analyses the frames at the encoded size/fps with fixed
+    settings, so its stats serve any later target bitrate (tests/test_encode.py
+    checks the second-pass output is byte-identical). Source identity, filters,
+    every codec flag and the thread count are in the key; only -b:v is not.
+    """
+    cmd = _video_cmd(src, cand, 1.0, final, threads)
+    i = cmd.index("-b:v")
+    del cmd[i : i + 2]
+    ident = [str(src.path), f"{src.start:.3f}", f"{src.duration:.3f}", *cmd]
+    return hashlib.sha1("\0".join(ident).encode()).hexdigest()[:16]
+
+
+# How far (as a ratio either way) a later target bitrate may stray from the one
+# pass 1 ran at before the stats are rebuilt. libvpx's first pass ignores the
+# target bitrate (second-pass output was byte-identical from stats made at 2x
+# the bitrate); x264's pass 1 runs ABR at the target, and 2x apart cost 0.2-0.3 dB.
+REUSE_TOLERANCE: dict[str, float | None] = {"vp9": None, "x264": 0.15}
+
+
+class FirstPassCache:
+    """First-pass stats files for one run, shared by size-correction retries and later stages.
+
+    One pass 1 per distinct key (and, where the codec's stats depend on it, per
+    bitrate band); threads asking for the same key at once wait for the first.
+    `runs` counts the pass-1 encodes executed, `hits` the reuses.
+    """
+
+    def __init__(self, root: Path):
+        self.root = root
+        self.runs = 0
+        self.hits = 0
+        self._lock = threading.Lock()
+        self._done: dict[str, tuple[Path, float]] = {}
+        self._gates: dict[str, threading.Lock] = {}
+
+    def _valid(self, key: str, kbps: float, tol: float | None) -> Path | None:
+        got = self._done.get(key)
+        if got and (tol is None or abs(math.log(kbps / got[1])) <= math.log1p(tol)):
+            return got[0]
+        return None
+
+    def get(self, key: str, kbps: float, tol: float | None, build: Callable[[Path], None]) -> Path:
+        """Stats prefix for `key`, running build(prefix) when none is valid for `kbps`."""
+        with self._lock:
+            hit = self._valid(key, kbps, tol)
+            if hit:
+                self.hits += 1
+                return hit
+            gate = self._gates.setdefault(key, threading.Lock())
+        with gate:
+            with self._lock:
+                hit = self._valid(key, kbps, tol)
+                if hit:
+                    self.hits += 1
+                    return hit
+                n = self.runs
+                self.runs += 1
+            self.root.mkdir(parents=True, exist_ok=True)
+            prefix = self.root / f"{key}-{n}"
+            build(prefix)
+            with self._lock:
+                self._done[key] = (prefix, kbps)
+            return prefix
+
+    def clear(self) -> None:
+        shutil.rmtree(self.root, ignore_errors=True)
+        self._done.clear()
+
+
+def run_first_pass(src: Source, cand: Candidate, kbps: float, prefix: Path, *, final: bool, threads: int) -> None:
+    base = _video_cmd(src, cand, kbps, final, threads)
+    ff.run([*base, "-an", "-pass", "1", "-passlogfile", str(prefix), "-f", "null", "-"])
+
+
 def encode_once(
     src: Source,
     cand: Candidate,
@@ -122,20 +214,26 @@ def encode_once(
     final: bool,
     threads: int,
     audio: bool,
+    cache: FirstPassCache | None = None,
 ) -> int:
-    # -color_* output flags alone left primaries/transfer "unknown" in the
-    # x264 mp4 (independent check, 2026-11-04); set them on the frames.
-    vf = norm_filter(src, cand.height, cand.fps) + (
-        ",setparams=range=tv:colorspace=bt709:color_primaries=bt709:color_trc=bt709"
-    )
-    vargs = codec_args(cand, src, kbps, final, threads)
-    log = out.with_suffix(".2pass")
-    base = [*ff.FFMPEG, "-v", "error", "-y", *src.in_args, "-i", str(src.path), "-vf", vf, *vargs, *COLOR_TAGS]
-    ff.run([*base, "-an", "-pass", "1", "-passlogfile", str(log), "-f", "null", "-"])
+    """One 2-pass encode at `kbps`. With a cache, pass 1 runs once per first_pass_key and is reused."""
+    if cache is None:
+        prefix = out.with_suffix(".2pass")
+        run_first_pass(src, cand, kbps, prefix, final=final, threads=threads)
+    else:
+        key = first_pass_key(src, cand, final, threads)
+        prefix = cache.get(
+            key,
+            kbps,
+            REUSE_TOLERANCE[cand.codec],
+            lambda p: run_first_pass(src, cand, kbps, p, final=final, threads=threads),
+        )
+    base = _video_cmd(src, cand, kbps, final, threads)
     mux = ["-movflags", "+faststart"] if cand.codec == "x264" else []
-    ff.run([*base, *audio_args(cand, src, audio), "-pass", "2", "-passlogfile", str(log), *mux, str(out)])
-    for p in out.parent.glob(log.name + "*"):
-        p.unlink()
+    ff.run([*base, *audio_args(cand, src, audio), "-pass", "2", "-passlogfile", str(prefix), *mux, str(out)])
+    if cache is None:
+        for p in out.parent.glob(prefix.name + "*"):
+            p.unlink()
     return out.stat().st_size
 
 
@@ -150,6 +248,7 @@ def encode_to_size(
     audio: bool,
     low: float,
     max_tries: int,
+    cache: FirstPassCache | None = None,
 ) -> EncodeResult:
     """2-pass encode, then rescale bitrate until size lands in [low*limit, limit].
 
@@ -164,7 +263,7 @@ def encode_to_size(
     t0 = time.monotonic()
     for i in range(max_tries):
         path = out.with_name(f"{out.stem}.try{i}{out.suffix}")
-        size = encode_once(src, cand, kbps, path, final=final, threads=threads, audio=audio)
+        size = encode_once(src, cand, kbps, path, final=final, threads=threads, audio=audio, cache=cache)
         attempts.append((kbps, size))
         if size <= limit and (best is None or size > best[1]):
             best = (kbps, size, path)

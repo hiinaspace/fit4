@@ -55,7 +55,9 @@ CRF_PER_OCTAVE = {"x264": 6.5, "vp9": 10.0}  # CRF steps for the bitrate to halv
 VP9_FLOOR_CRF = REF_CRF["vp9"]
 # dB the screening settings gain over the fast probe settings, per codec (scripts/measure_probe_fast.py).
 OFFSET_DB = {"x264": 0.20, "vp9": 0.0}
-VP9_PROBE_TOP = 4
+# None: probe every floor-feasible VP9 geometry. Ranking them by the x264 prediction is wrong:
+# VP9 gains far more from resolution (A30: x264 ranked 1080p60 last of 8, it was the true best).
+VP9_PROBE_TOP: int | None = None
 
 
 @dataclass
@@ -138,7 +140,7 @@ def run_fast_probe(
     audio_kbps: Mapping[str, float] | None = None,
     n_slices: int = 3,
     slice_len: float = 2.0,
-    vp9_top: int = VP9_PROBE_TOP,
+    vp9_top: int | None = VP9_PROBE_TOP,
     log: Callable[[str], None] = lambda s: None,
 ) -> FastProbe:
     work.mkdir(parents=True, exist_ok=True)
@@ -205,7 +207,7 @@ def run_fast_probe(
             if q is not None:
                 xq[(c.height, float(c.fps))] = q
         order, unprobed = vp9_order(interim, vp9, xq, limit, akb.get("vp9", 0.0))
-        chosen = order[:vp9_top] if x264 else order
+        chosen = order if vp9_top is None or not x264 else order[:vp9_top]
         for i, c in enumerate(order):
             if c not in chosen:
                 unprobed[c] = f"VP9 probe skipped: x264 ranks this geometry {i + 1} of {len(order)} feasible"

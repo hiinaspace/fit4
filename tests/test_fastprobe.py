@@ -1,5 +1,6 @@
 """Fast pre-flight probe: argument rewriting and VP9 ordering (pure), plus one short real run."""
 
+import math
 import subprocess
 from fractions import Fraction
 
@@ -99,3 +100,21 @@ def test_probe_runs_end_to_end_on_a_short_clip(tmp_path):
 def test_probe_flags_exist():
     a = cli.build_parser().parse_args(["x.mp4", "--full-grid", "--prune-margin", "2", "--prune-keep", "6"])
     assert a.full_grid and a.prune_margin == 2.0 and a.prune_keep == 6 and not a.probe_only
+
+
+@pytest.mark.ffmpeg
+@pytest.mark.skipif(why is not None, reason=f"needs a full ffmpeg: {why}")
+def test_reel_scores_lossless_against_itself(tmp_path):
+    """Regression: a 60 fps mkv reel (1 ms stamps) paired neighbouring frames, so self-score read ~35 dB."""
+    from fit4.metrics import score
+    from fit4.preflight import build_reel
+
+    clip = tmp_path / "c.mp4"
+    ff.run([
+        *ff.FFMPEG, "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=320x180:r=60:d=6",
+        "-vf", "noise=alls=8:allf=t", "-c:v", "libx264", "-preset", "ultrafast", "-qp", "0", "-pix_fmt", "yuv420p", str(clip),
+    ])  # fmt: skip
+    src = probe(clip)
+    reel = build_reel(src, [(0.0, 2.0), (3.0, 2.0)], tmp_path)
+    s = score(reel, reel.path, tmp_path / "x.txt")
+    assert s.xpsnr_yuv > 60 or math.isinf(s.xpsnr_yuv)

@@ -241,7 +241,13 @@ def pick_slices(src: Source, n: int, length: float) -> list[tuple[float, float]]
 
 def build_reel(src: Source, slices: list[tuple[float, float]], work: Path) -> Source:
     """Concatenate the slices, normalized as the reference is, into a near-lossless reel."""
-    out = work / "reel.mkv"
+    # mp4, not mkv: Matroska stamps frames to the millisecond (16/17 ms at 60 fps), and the
+    # XPSNR filter pairs frames by timestamp, so scoring a reel against itself paired
+    # neighbouring frames and read ~35 dB instead of infinity. The track timescale is a
+    # multiple of the frame rate, so every frame lands on an exact tick.
+    out = work / "reel.mp4"
+    fps = src.fps
+    timescale = fps.numerator * (1000 if fps.denominator == 1 else 1)
     ins: list[str] = []
     chains = []
     for i, (a, d) in enumerate(slices):
@@ -253,7 +259,7 @@ def build_reel(src: Source, slices: list[tuple[float, float]], work: Path) -> So
     ff.run(
         [*ff.FFMPEG, "-v", "error", "-y", *ins, "-filter_complex", lavfi, "-map", "[out]",
          "-c:v", "libx264", "-preset", "ultrafast", "-qp", "0", "-pix_fmt", "yuv420p",
-         "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv", str(out)],
+         "-video_track_timescale", str(timescale), "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv", str(out)],
     )  # fmt: skip
     return probe(out)
 

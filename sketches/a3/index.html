@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fit4 · tagging (A3)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <main id="left">
+    <div id="stage"><video id="vid" src="../data/proxy.mp4" preload="auto" playsinline></video><div id="vlabel">preview: 540p30 proxy, not the encode</div></div>
+    <div id="transport">
+      <button id="play" title="Space">Play</button>
+      <button id="playpart" title="Play the selected part or proposed clip, stop at its end">Play clip</button>
+      <span id="clock" class="mono">0.0 / 119.7 s</span>
+      <span class="sp"></span>
+      <span class="hint"><kbd>Space</kbd> play · <kbd>M</kbd> moment · <kbd>K</kbd> keep start/end · <kbd>B</kbd> boring start/end · <kbd>P</kbd> re-pack · <kbd>Del</kbd> delete · <kbd>←</kbd><kbd>→</kbd> 0.1 s (Shift 1 s)</span>
+    </div>
+    <section id="cmdbox">
+      <div class="boxhead"><b>Commands</b><span class="sp"></span>
+        <button id="copy">Copy</button>
+        <button id="encode" disabled title="Running encodes from the GUI comes later">Encode</button></div>
+      <pre id="cmds" class="mono"></pre>
+    </section>
+  </main>
+
+  <aside id="side">
+    <section id="settings">
+      <label>Limit <input id="limit" type="number" min="0.5" step="0.5" value="4"> MiB</label>
+      <label class="chk"><input id="audio" type="checkbox"> Audio</label>
+      <span class="sp"></span>
+      <button id="addpart" title="New part at the playhead">+ Part</button>
+    </section>
+    <section id="plan">
+      <div class="boxhead"><b>Plan</b><span class="sp"></span>
+        <span class="stepper" title="Most clips the solver may use, accepted parts included">Max clips
+          <button id="kminus" aria-label="fewer">−</button><b id="kval">3</b><button id="kplus" aria-label="more">+</button></span>
+        <button id="repack" title="P: re-solve everything that is not pinned, dropping the tie-break toward the current layout">Re-pack (P)</button></div>
+      <div id="plansum"></div>
+      <div id="props"></div>
+      <div id="leftout"></div>
+      <div class="boxhead"><button id="acceptall">Accept all as parts</button><button id="clearpins">Clear pins</button><span class="sp"></span><span class="dim" id="pincount"></span></div>
+      <div id="inspector"></div>
+    </section>
+    <section id="parts"></section>
+    <section id="ladder">
+      <div class="boxhead"><b id="ladtitle">What dB looks like</b><span class="sp"></span><span id="ladnote"></span></div>
+      <div id="chips"></div>
+      <div id="tiles"><div class="tile" id="t1"></div><div class="tile" id="t2"></div></div>
+      <div class="cap"><span>rock texture</span><span>enemy</span></div>
+    </section>
+  </aside>
+
+  <section id="timeline">
+    <div id="tbar">
+      <button id="split2" title="Best 2-way split of the selected part">Split in 2</button>
+      <button id="split3" title="Best 3-way split of the selected part">Split in 3</button>
+      <span class="div"></span>
+      <span class="seg" id="anchor"><button data-v="head" class="on" title="Curve: quality if a part started or ended at the playhead and ran to each point">from playhead</button><button data-v="part" title="Curve: quality if the selected clip started where it does and ended at each point">from clip start</button></span>
+      <span class="div"></span>
+      <button id="bmoment" class="mkb moment" title="M: moment at the playhead">Moment (M)</button>
+      <button id="bkeep" class="mkb keep" title="K: start a keep range, press again to end it">Keep (K)</button>
+      <button id="bboring" class="mkb boring" title="B: start a boring range, press again to end it">Boring (B)</button>
+      <span class="newdef" title="Default context for new moments. Existing marks keep theirs: drag a bracket end or use the fields in Plan.">new moment: lead <input id="deflead" type="number" min="0" step="0.5"> lag <input id="deflag" type="number" min="0" step="0.5"> s</span>
+      <button id="demo">Demo marks</button>
+      <button id="clearmarks">Clear marks</button>
+      <span id="fitsout"></span>
+      <span class="sp"></span>
+    </div>
+    <div id="trwrap">
+      <div id="gutter">
+        <span style="top:2px">time</span><span style="top:28px">video</span><span style="top:64px">audio</span><span style="top:98px">encode cost</span><span style="top:146px">quality dB</span>
+        <span style="top:196px">marks</span><span style="top:243px">proposed</span><span style="top:281px">parts</span>
+      </div>
+      <div id="track">
+        <div id="ruler"></div>
+        <div id="film"></div>
+        <canvas id="aud"></canvas>
+        <canvas id="cost"></canvas>
+        <canvas id="qc"></canvas>
+        <div id="bands"></div>
+        <div id="mlane"><div id="pend" class="mk pend"></div></div>
+        <div id="plane"></div>
+        <div id="lane"></div>
+        <div id="head"><b></b></div>
+      </div>
+    </div>
+  </section>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

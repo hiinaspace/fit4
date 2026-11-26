@@ -35,7 +35,7 @@ from .metrics import score
 from .probe import Source, probe
 
 CRFS = {"x264": (22, 30, 38, 46), "vp9": (30, 42, 54, 63)}
-VP9_FLOOR = 1.6
+VP9_FLOOR = 2.0
 GOP_SECONDS = 20  # matches encode.codec_args
 TIMELINE_HEIGHT = 540
 TIMELINE_CRF = 30

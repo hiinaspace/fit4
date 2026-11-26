@@ -39,8 +39,8 @@ def test_vp9_floor_returns_none_below_its_ceiling_bitrate():
     p = mk([1.0] * 60)
     vp9 = p.curves[1]
     floor = min(p.kbps_at(vp9, pt, 0, 60) for pt in vp9.points)
-    assert p.predict(vp9, 0, 60, floor * 1.5) is None
-    assert p.predict(vp9, 0, 60, floor * 1.7) is not None
+    assert p.predict(vp9, 0, 60, floor * 1.9) is None
+    assert p.predict(vp9, 0, 60, floor * 2.1) is not None
 
 
 def test_split_balances_parts_and_fits_is_monotone():

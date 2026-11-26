@@ -91,6 +91,6 @@ def decide(
 
 def _explain(why: str) -> str:
     return {
-        "floor": "budget under 1.6x the VP9 CRF-63 bitrate: libvpx 2-pass would not get under the limit",
+        "floor": "budget under 2x the VP9 CRF-63 bitrate: libvpx 2-pass would not get under the limit",
         "unprobed": "no probe curve",
     }.get(why, why)

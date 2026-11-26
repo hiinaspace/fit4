@@ -57,11 +57,11 @@ def test_vp9_order_ranks_by_x264_and_explains_the_floor():
     p = Probe(start=0.0, duration=30.0, src_fps=60.0, timeline=[1.0] * 30, reel_complexity=1.0, slices=[(0.0, 2.0)],
               curves=[floor_curve("vp9", 720, 30, 300), floor_curve("vp9", 540, 30, 150), floor_curve("vp9", 1080, 30, 900)])  # fmt: skip
     vp9 = [cand("vp9", 720), cand("vp9", 540), cand("vp9", 1080)]
-    # budget is ~1.1 Mbps: 1080p's floor (900 x 1.6) does not fit.
+    # budget is ~1.1 Mbps: 1080p's floor (900 x 2) does not fit.
     xq = {(720, 30.0): 33.0, (540, 30.0): 34.0, (1080, 30.0): 40.0}
     feasible, out = fastprobe.vp9_order(p, vp9, xq, LIMIT, 0.0)
     assert [c.height for c in feasible] == [540, 720]
-    assert list(out) == [cand("vp9", 1080)] and "1.6x" in out[cand("vp9", 1080)]
+    assert list(out) == [cand("vp9", 1080)] and "2x" in out[cand("vp9", 1080)]
 
 
 def _ffmpeg_ok() -> str | None:
@@ -84,15 +84,16 @@ def test_probe_runs_end_to_end_on_a_short_clip(tmp_path):
         "-vf", "noise=alls=8:allf=t", "-c:v", "libx264", "-preset", "ultrafast", "-qp", "0", "-pix_fmt", "yuv420p", str(clip),
     ])  # fmt: skip
     src = probe(clip)
-    cands = [cand(c, h, 24) for c in ("x264", "vp9") for h in (180, 144)]
-    fp = fastprobe.run_fast_probe(src, cands, 150_000, tmp_path / "w", plan_layout(4, ["x264", "vp9"]), vp9_top=1)
-    labels = {c.label() for c in fp.probe.curves}
-    assert {"x264-180p24", "x264-144p24"} <= labels
-    # every VP9 geometry is either fully probed or reported as skipped, never silently dropped
-    vp9_seen = {c.label() for c in fp.probe.curves if c.codec == "vp9"} | {c.label() for c in fp.unprobed}
-    assert vp9_seen == {"vp9-180p24", "vp9-144p24"}
+    cands = [cand(c, h, 24) for c in ("x264", "vp9") for h in (180, 144)] + [cand("vp9", 180, 12)]
+    fp = fastprobe.run_fast_probe(src, cands, 150_000, tmp_path / "w", plan_layout(4, ["x264", "vp9"]))
+    # every geometry is either probed or reported as skipped with a reason, never silently dropped
+    seen = {c.label() for c in fp.probe.curves} | {c.label() for c in fp.unprobed}
+    assert seen == {c.label() for c in cands}
+    assert all(fp.unprobed.values())
+    assert {c.label() for c in fp.probe.curves if c.codec == "vp9"} == {"vp9-180p24", "vp9-144p24"}
+    assert sum(c.codec == "x264" for c in fp.probe.curves) >= 1  # at least the pilot
     q = Probe.from_json(fp.probe.to_json())
-    assert all(2 <= len(c.points) <= 3 for c in q.curves if c.codec == "x264")  # reference + bracketing points
+    assert all(2 <= len(c.points) <= 3 for c in q.curves)
     assert all(c.points[0].crf <= c.points[-1].crf for c in q.curves)
     assert not list((tmp_path / "w").glob("reel.*"))
 

@@ -84,7 +84,7 @@ def write(
         views[t.cand.label()] = extract(t.enc.path, distorted_filter(src), idx, frames_dir, t.cand.label())
 
     rows = []
-    best = max(t.score.primary for t in screen)
+    best = max((t.score.primary for t in screen), default=0.0)
     for t in sorted(screen, key=lambda t: t.score.primary, reverse=True):
         w = t.cand.width_for(src)
         rows.append(

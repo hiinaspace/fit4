@@ -49,10 +49,10 @@ def test_min_keep_beats_margin():
 
 
 def test_vp9_under_floor_is_dropped_whatever_its_rank():
-    # Heavy content: the VP9 CRF-63 stand-in costs more than the budget / 1.6.
+    # Heavy content: the VP9 CRF-63 stand-in costs more than the budget / 2.
     cs = [curve("x264", 720, 30.0, 4000.0), curve("vp9", 720, 30.0, 120000.0, top_db=40.0)]
     ds = {d.cand.codec: d for d in decide(probe_with(cs), [cand("x264", 720), cand("vp9", 720)], LIMIT)}
-    assert not ds["vp9"].keep and ds["vp9"].reason.startswith("budget under 1.6x") and ds["vp9"].predicted is None
+    assert not ds["vp9"].keep and ds["vp9"].reason.startswith("budget under 2x") and ds["vp9"].predicted is None
     assert ds["x264"].keep
 
 

@@ -16,10 +16,10 @@ from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, T
 
 from . import fastprobe, ff, preflight, prune, report
 from .boards import BOARDS, Board
-from .encode import EXT, Candidate, FirstPassCache, budget_kbps
+from .encode import EXT, FLOOR_FIX, Candidate, FirstPassCache, budget_kbps
 from .layout import available_cpus, plan_layout
 from .probe import BadInput, Source, probe, trim
-from .search import grid, pick_finalists, run_trials
+from .search import Trial, grid, pick_finalists, run_finals, run_onepass, run_trials
 
 # Exit codes (also in --help and the README).
 OK, FAILED, USAGE, NO_FFMPEG, INTERRUPTED = 0, 1, 2, 3, 130
@@ -27,6 +27,12 @@ OK, FAILED, USAGE, NO_FFMPEG, INTERRUPTED = 0, 1, 2, 3, 130
 PROBE_MIN_SECONDS = 10.0
 # Below this video bitrate neither encoder produces anything watchable.
 MIN_VIDEO_KBPS = 30
+# Finals land in [FINAL_LOW * limit, limit] within FINAL_ROUNDS rounds of side-by-side 2-pass encodes.
+FINAL_LOW = 0.97
+FINAL_ROUNDS = 3
+
+SCREEN_MODES = ("2pass", "crf", "none")
+DEFAULT_SCREEN = "2pass"
 
 EPILOG = """\
 examples:
@@ -89,6 +95,13 @@ def parse_time(text: str) -> float:
     for p in parts:
         secs = secs * 60 + p
     return secs
+
+
+def parse_reel(text: str) -> tuple[int, float]:
+    m = re.fullmatch(r"(\d+)x(\d+(?:\.\d+)?)", text.strip())
+    if not m or int(m.group(1)) < 1 or float(m.group(2)) <= 0:
+        raise argparse.ArgumentTypeError(f"{text!r}: want NxS, e.g. 3x2 for three 2-second slices")
+    return int(m.group(1)), float(m.group(2))
 
 
 def positive(text: str) -> int:
@@ -174,9 +187,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="but always screen at least the best N predicted (default: %(default)s)",
     )
     ap.add_argument(
+        "--probe-reel",
+        type=parse_reel,
+        default=fastprobe.DEFAULT_REEL,
+        metavar="NxS",
+        help="probe sample: N slices of S seconds each (default: %(default)s)",
+    )
+    ap.add_argument(
         "--probe-only",
         action="store_true",
         help="run the pre-flight probe, write probe.json and the pruning decisions to the work directory, and stop",
+    )
+    ap.add_argument(
+        "--screen",
+        choices=SCREEN_MODES,
+        default=DEFAULT_SCREEN,
+        help="how the probe's survivors are ranked before the finals: 2pass = size-fitted 2-pass encodes (the old "
+        "screening), crf = one constant-quality encode each at the CRF the probe predicts, none = trust the probe's "
+        "prediction and final-encode its top --finals (default: %(default)s; crf and none need the probe)",
     )
     ap.add_argument("--no-audio", action="store_true", help="drop the audio track (frees its bits for video)")
     ap.add_argument("--force", action="store_true", help="re-encode even if the source already fits")
@@ -208,6 +236,33 @@ def run_stage(name: str, src, cands, limit, work, **kw):
         return run_trials(src, cands, limit, work, log=log, on_done=lambda: prog.advance(task), **kw)
 
 
+def run_final_stage(src, fin, limit, work, budget, audio, cache):
+    """Size-fit the finalists; if none gets under the limit, retry with libvpx's floor-lowering flags (slow)."""
+
+    def fit(cs, overrides=None):
+        return run_finals(
+            src, cs, limit, work, budget=budget, audio=audio, low=FINAL_LOW, max_rounds=FINAL_ROUNDS, log=log,
+            cache=cache, overrides=overrides,
+        )  # fmt: skip
+
+    finals = fit(fin)
+    if not finals and any(c.codec == "vp9" for c in fin):
+        log("no final fit; retrying VP9 with cpu-used 2 (slower)")
+        finals = fit([c for c in fin if c.codec == "vp9"], FLOOR_FIX)
+    if not finals:
+        raise RuntimeError("no final encode got under the size limit; try a larger --limit or a shorter clip")
+    return finals
+
+
+def run_onepass_stage(src, cands, limit, work, pf, **kw):
+    with Progress(
+        TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(), console=CONSOLE,
+        transient=True,
+    ) as prog:  # fmt: skip
+        task = prog.add_task("screening (1 pass)", total=len(cands))
+        return run_onepass(src, cands, limit, work, pf, log=log, on_done=lambda: prog.advance(task), **kw)
+
+
 def already_fits(src: Source, board: Board, limit: int, audio: bool) -> bool:
     """True when the source could be uploaded as-is: under the limit, in a format the target takes."""
     if src.size > limit or max(src.width, src.height) > board.max_dim:
@@ -237,15 +292,25 @@ def codecs_for(args: argparse.Namespace, board: Board) -> list[str]:
 
 def preflight_prune(
     src: Source, cands: list[Candidate], limit: int, work: Path, layout, audio: bool, args: argparse.Namespace
-) -> tuple[list[Candidate], list[Candidate]]:
-    """Run the fast probe and split the grid into (screen these, skipped). Falls back to the full grid on failure."""
+) -> tuple[list[Candidate], list[Candidate], preflight.Probe | None, dict[str, float]]:
+    """Run the fast probe and split the grid into (screen these, skipped, the probe). Falls back to the full grid on failure."""
     t0 = time.monotonic()
     audio_kbps = preflight.audio_kbps_for(src, audio)
     try:
-        fp = fastprobe.run_fast_probe(src, cands, limit, work / "probe", layout, audio_kbps=audio_kbps, log=log)
+        fp = fastprobe.run_fast_probe(
+            src,
+            cands,
+            limit,
+            work / "probe",
+            layout,
+            audio_kbps=audio_kbps,
+            n_slices=args.probe_reel[0],
+            slice_len=args.probe_reel[1],
+            log=log,
+        )
     except (subprocess.CalledProcessError, RuntimeError) as e:
         log(f"probe failed ({e}); screening the full grid")
-        return cands, []
+        return cands, [], None, {}
     (work / "probe.json").write_text(fp.probe.to_json())
     decisions = prune.decide(
         fp.probe, cands, limit, audio_kbps=audio_kbps, offsets=fastprobe.OFFSET_DB,
@@ -266,8 +331,9 @@ def preflight_prune(
     )
     if not kept:
         log("probe kept nothing; screening the full grid")
-        return cands, []
-    return kept, [d.cand for d in decisions if not d.keep]
+        return cands, [], None, {}
+    pred = {d.cand.label(): d.predicted for d in decisions if d.predicted is not None}
+    return kept, [d.cand for d in decisions if not d.keep], fp.probe, pred
 
 
 def run(args: argparse.Namespace) -> int:
@@ -311,30 +377,50 @@ def run(args: argparse.Namespace) -> int:
     cpus = (os.cpu_count() or 4) if args.flat_layout else available_cpus()
     layout = plan_layout(cpus, codecs, args.jobs, args.flat_layout)
     skipped: list[Candidate] = []
+    pf: preflight.Probe | None = None
+    pred: dict[str, float] = {}
     if args.probe_only or not (args.full_grid or src.duration < PROBE_MIN_SECONDS):
-        kept, skipped = preflight_prune(src, cands, limit, work, layout, audio, args)
+        kept, skipped, pf, pred = preflight_prune(src, cands, limit, work, layout, audio, args)
         if args.probe_only:
             return OK
         cands = kept
     elif not args.full_grid:
         log(f"clip under {PROBE_MIN_SECONDS:g}s: screening the full grid")
-    log(f"screening {len(cands)} candidates (fast presets; {layout.describe()})")
+    mode = args.screen if pf is not None else "2pass"
     cache = FirstPassCache(work / ".firstpass")
+    screen: list[Trial] = []
     try:
-        try:
+        if mode == "none":
+            # The probe's prediction ranks the survivors; only its top --finals are encoded.
+            fin = sorted(cands, key=lambda c: pred.get(c.label(), -1e9), reverse=True)[: args.finals]
+            log(f"no screening: final encodes of the probe's top {len(fin)}: {', '.join(c.label() for c in fin)}")
+        else:
+            log(f"screening {len(cands)} candidates ({mode}; {layout.describe()})")
+            try:
+                if mode == "crf" and pf is not None:
+                    screen = run_onepass_stage(src, cands, limit, work, pf, layout=layout, audio=audio)
+                else:
+                    screen = run_stage(
+                        "screening", src, cands, limit, work, final=False, layout=layout, audio=audio, cache=cache
+                    )
+            except RuntimeError:
+                if not skipped:
+                    raise
+                log(f"no pruned candidate fit; screening the {len(skipped)} the probe skipped")
+                screen = run_stage(
+                    "screening", src, skipped, limit, work, final=False, layout=layout, audio=audio, cache=cache
+                )
+            fin = pick_finalists(screen, args.finals)
+            log(f"final encodes: {', '.join(c.label() for c in fin)}")
+        finals = run_final_stage(src, fin, limit, work, layout.budget, audio, cache)
+        if not finals and mode == "none":
+            log("no final fit; screening the rest of the grid")
+            rest = [c for c in cands + skipped if c not in fin]
             screen = run_stage(
-                "screening", src, cands, limit, work, final=False, layout=layout, audio=audio, cache=cache
+                "screening", src, rest, limit, work, final=False, layout=layout, audio=audio, cache=cache
             )
-        except RuntimeError:
-            if not skipped:
-                raise
-            log(f"no pruned candidate fit; screening the {len(skipped)} the probe skipped")
-            screen = run_stage(
-                "screening", src, skipped, limit, work, final=False, layout=layout, audio=audio, cache=cache
-            )
-        fin = pick_finalists(screen, args.finals)
-        log(f"final encodes: {', '.join(c.label() for c in fin)}")
-        finals = run_stage("final", src, fin, limit, work, final=True, layout=layout, audio=audio, cache=cache)
+            fin = pick_finalists(screen, args.finals)
+            finals = run_final_stage(src, fin, limit, work, layout.budget, audio, cache)
     finally:
         log(f"first passes: {cache.runs} run, {cache.hits} reused")
         cache.clear()
@@ -357,6 +443,7 @@ def run(args: argparse.Namespace) -> int:
             "seconds": round(t.enc.seconds, 1),
             "attempts": t.enc.attempts,
             "floor_fix": t.enc.floor_fix,
+            "rank_db": None if t.rank is None else round(t.rank, 3),
         }
         for stage, ts in (("screen", screen), ("final", finals))
         for t in ts

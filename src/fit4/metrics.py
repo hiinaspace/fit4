@@ -34,13 +34,18 @@ def reference_filter(src: Source) -> str:
     return norm_filter(src) + ",setpts=PTS-STARTPTS"
 
 
-def score(src: Source, dist: Path, stats: Path) -> Score:
-    lavfi = (
-        f"[0:v]{distorted_filter(src)},split[d1][d2];"
-        f"[1:v]{reference_filter(src)},split[r1][r2];"
-        f"[d1][r1]ssim;"
-        f"[d2][r2]xpsnr=shortest=1:stats_file={stats}"
-    )
+def score(src: Source, dist: Path, stats: Path, ssim: bool = True) -> Score:
+    if ssim:
+        lavfi = (
+            f"[0:v]{distorted_filter(src)},split[d1][d2];"
+            f"[1:v]{reference_filter(src)},split[r1][r2];"
+            f"[d1][r1]ssim;"
+            f"[d2][r2]xpsnr=shortest=1:stats_file={stats}"
+        )
+    else:  # the probe only needs XPSNR
+        lavfi = (
+            f"[0:v]{distorted_filter(src)}[d];[1:v]{reference_filter(src)}[r];[d][r]xpsnr=shortest=1:stats_file={stats}"
+        )
     out = ff.run(
         [
             *ff.FFMPEG,
@@ -64,4 +69,4 @@ def score(src: Source, dist: Path, stats: Path) -> Score:
     y, u, v = (float(x) for x in m[-1])
     s = re.findall(r"SSIM Y:([\d.]+)", out)
     per = [float(x) for x in re.findall(r"XPSNR y:\s*([\d.inf]+)", stats.read_text())]
-    return Score(xpsnr_y=y, xpsnr_yuv=(4 * y + u + v) / 6, ssim_y=float(s[-1]), per_frame_y=per)
+    return Score(xpsnr_y=y, xpsnr_yuv=(4 * y + u + v) / 6, ssim_y=float(s[-1]) if s else 0.0, per_frame_y=per)

@@ -99,3 +99,21 @@ def test_full_grid_flag_skips_the_probe(tmp_path, capsys):
     rc = cli.main([str(clip), "--limit", "150000", "--scales", "1", "--fps-divs", "1", "--finals", "1", "--full-grid"])
     assert rc == 0, capsys.readouterr().err
     assert not (tmp_path / "clip.fit4.d" / "prune.json").exists()
+
+
+@pytest.mark.parametrize("mode", ["crf", "none"])
+def test_screen_modes_deliver_under_the_limit(tmp_path, capsys, mode):
+    clip = tmp_path / "clip.mp4"
+    make_clip(clip, audio=False, seconds=12, size="640x360")
+    limit = 150_000
+    rc = cli.main(
+        [str(clip), "--limit", str(limit), "--scales", "1,0.5", "--fps-divs", "1", "--finals", "2",
+         "--prune-keep", "3", "--screen", mode]
+    )  # fmt: skip
+    out, err = capsys.readouterr()
+    assert rc == 0, err
+    result = tmp_path / out.strip().splitlines()[-1]
+    assert 0.85 * limit < result.stat().st_size <= limit
+    rows = json.loads((tmp_path / "clip.fit4.d" / "results.json").read_text())
+    assert any(r["stage"] == "final" for r in rows)
+    assert (mode == "none") == (not any(r["stage"] == "screen" for r in rows))

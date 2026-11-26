@@ -1,0 +1,98 @@
+[
+ {
+  "label": "x264-1080p60",
+  "keep": false,
+  "reason": "x264 pilot (900p) is 4.2 dB behind the best VP9",
+  "predicted": null
+ },
+ {
+  "label": "x264-1080p30",
+  "keep": false,
+  "reason": "lower frame rate x264 is not probed",
+  "predicted": null
+ },
+ {
+  "label": "x264-900p60",
+  "keep": true,
+  "reason": "kept",
+  "predicted": 27.013597601900972
+ },
+ {
+  "label": "x264-900p30",
+  "keep": false,
+  "reason": "lower frame rate x264 is not probed",
+  "predicted": null
+ },
+ {
+  "label": "x264-720p60",
+  "keep": false,
+  "reason": "x264 pilot (900p) is 4.2 dB behind the best VP9",
+  "predicted": null
+ },
+ {
+  "label": "x264-720p30",
+  "keep": false,
+  "reason": "lower frame rate x264 is not probed",
+  "predicted": null
+ },
+ {
+  "label": "x264-540p60",
+  "keep": false,
+  "reason": "x264 pilot (900p) is 4.2 dB behind the best VP9",
+  "predicted": null
+ },
+ {
+  "label": "x264-540p30",
+  "keep": false,
+  "reason": "lower frame rate x264 is not probed",
+  "predicted": null
+ },
+ {
+  "label": "vp9-1080p60",
+  "keep": false,
+  "reason": "budget under 2x the VP9 CRF-63 bitrate: libvpx 2-pass would not get under the limit",
+  "predicted": null
+ },
+ {
+  "label": "vp9-1080p30",
+  "keep": false,
+  "reason": "30 fps: judder ceiling 32.6 dB, so about 28.0 dB at best against 31.2 for full-rate VP9",
+  "predicted": null
+ },
+ {
+  "label": "vp9-900p60",
+  "keep": true,
+  "reason": "kept",
+  "predicted": 31.198832514068194
+ },
+ {
+  "label": "vp9-900p30",
+  "keep": false,
+  "reason": "30 fps: judder ceiling 32.6 dB, so about 30.0 dB at best against 31.2 for full-rate VP9",
+  "predicted": null
+ },
+ {
+  "label": "vp9-720p60",
+  "keep": true,
+  "reason": "kept",
+  "predicted": 30.958522761090908
+ },
+ {
+  "label": "vp9-720p30",
+  "keep": false,
+  "reason": "30 fps: judder ceiling 32.6 dB, so about 29.8 dB at best against 31.2 for full-rate VP9",
+  "predicted": null
+ },
+ {
+  "label": "vp9-540p60",
+  "keep": true,
+  "reason": "kept",
+  "predicted": 30.446466553928154
+ },
+ {
+  "label": "vp9-540p30",
+  "keep": false,
+  "reason": "30 fps: judder ceiling 32.6 dB, so about 29.5 dB at best against 31.2 for full-rate VP9",
+  "predicted": null
+ }
+]

@@ -356,6 +356,7 @@ def run(args: argparse.Namespace) -> int:
             "ssim_y": round(t.score.ssim_y, 5),
             "seconds": round(t.enc.seconds, 1),
             "attempts": t.enc.attempts,
+            "floor_fix": t.enc.floor_fix,
         }
         for stage, ts in (("screen", screen), ("final", finals))
         for t in ts

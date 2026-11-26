@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
+import tempfile
 from collections.abc import Iterable, Sequence
+
+from . import dump
 
 # Every ffmpeg call gets -nostdin and stdin=DEVNULL. Otherwise ffmpeg reads the
 # terminal for its interactive keys and can swallow a caller's heredoc or piped
@@ -27,7 +31,30 @@ class MissingFFmpeg(RuntimeError):
 def run(args: Sequence[str], *, capture: bool = False) -> subprocess.CompletedProcess[str]:
     if args[0] == "ffmpeg" and "-nostdin" not in args:
         raise AssertionError("ffmpeg call without -nostdin")
-    return subprocess.run(list(args), stdin=subprocess.DEVNULL, check=True, capture_output=capture, text=True)
+    if not dump.enabled():
+        return subprocess.run(list(args), stdin=subprocess.DEVNULL, check=True, capture_output=capture, text=True)
+    return _run_accounted(list(args), capture)
+
+
+def _run_accounted(args: list[str], capture: bool) -> subprocess.CompletedProcess[str]:
+    """subprocess.run, plus the child's CPU seconds (rusage) added to this thread's dump.tls.cpu."""
+    out = tempfile.TemporaryFile() if capture else None
+    err = tempfile.TemporaryFile() if capture else None
+    p = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=out, stderr=err)
+    _, status, ru = os.wait4(p.pid, 0)
+    p.returncode = os.waitstatus_to_exitcode(status)
+    dump.tls.cpu = getattr(dump.tls, "cpu", 0.0) + ru.ru_utime + ru.ru_stime
+    texts = []
+    for f in (out, err):
+        if f is None:
+            texts.append(None)
+            continue
+        f.seek(0)
+        texts.append(f.read().decode(errors="replace"))
+        f.close()
+    if p.returncode:
+        raise subprocess.CalledProcessError(p.returncode, args, texts[0], texts[1])
+    return subprocess.CompletedProcess(args, 0, texts[0], texts[1])
 
 
 def parse_listing(text: str) -> set[str]:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ from fractions import Fraction
 from pathlib import Path
 
 from .boards import Board
+from . import dump
 from .encode import Candidate, EncodeResult, encode_to_size
 from .metrics import Score, score
 from .probe import Source
@@ -60,6 +62,7 @@ def run_trials(
     low, tries = (0.975, 4) if final else (0.95, 3)
 
     def one(c: Candidate) -> Trial | None:
+        dump.tls.cpu = 0.0
         try:
             enc = encode_to_size(
                 src,
@@ -76,7 +79,13 @@ def run_trials(
             log(f"  {c.label():<18} skipped: {e}")
             on_done()
             return None
+        _enc_cpu = dump.tls.cpu
+        _t = time.monotonic()
         sc = score(src, enc.path, enc.path.with_suffix(".xpsnr.txt"))
+        dump.update(c.label(), final, score_seconds=round(time.monotonic() - _t, 1), enc_cpu_s=round(_enc_cpu, 1),
+                    score_cpu_s=round(dump.tls.cpu - _enc_cpu, 1), size=enc.size,
+                    kbps=round(enc.kbps, 1), xpsnr_yuv=round(sc.xpsnr_yuv, 3), xpsnr_y=round(sc.xpsnr_y, 3),
+                    ssim_y=round(sc.ssim_y, 5))
         log(
             f"  {c.label():<18} {enc.size / 1e6:6.3f} MB  {enc.kbps:5.0f} kbps  "
             f"XPSNR {sc.xpsnr_yuv:6.3f}  SSIM {sc.ssim_y:.4f}  ({enc.seconds:.0f}s, {len(enc.attempts)} tries)"

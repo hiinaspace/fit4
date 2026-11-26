@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from pathlib import Path
 
-from . import ff
+from . import dump, ff
 from .probe import Source
 
 # Audio bitrate reserved when the source has audio (kbps).
@@ -131,9 +131,13 @@ def encode_once(
     vargs = codec_args(cand, src, kbps, final, threads)
     log = out.with_suffix(".2pass")
     base = [*ff.FFMPEG, "-v", "error", "-y", *src.in_args, "-i", str(src.path), "-vf", vf, *vargs, *COLOR_TAGS]
+    _t = time.monotonic()
     ff.run([*base, "-an", "-pass", "1", "-passlogfile", str(log), "-f", "null", "-"])
+    _p1 = time.monotonic() - _t
     mux = ["-movflags", "+faststart"] if cand.codec == "x264" else []
+    _t = time.monotonic()
     ff.run([*base, *audio_args(cand, src, audio), "-pass", "2", "-passlogfile", str(log), *mux, str(out)])
+    dump.tls.passes = (round(_p1, 1), round(time.monotonic() - _t, 1))
     for p in out.parent.glob(log.name + "*"):
         p.unlink()
     return out.stat().st_size
@@ -162,9 +166,20 @@ def encode_to_size(
     attempts: list[tuple[float, int]] = []
     best: tuple[float, int, Path] | None = None
     t0 = time.monotonic()
+    _tries: list[dict] = []
+    _rec = {
+        "label": cand.label(), "codec": cand.codec, "height": cand.height, "fps": float(cand.fps),
+        "final": final, "threads": threads, "t_begin": round(time.time() - dump.META["t_start"], 1), "tries": _tries,
+    }
     for i in range(max_tries):
         path = out.with_name(f"{out.stem}.try{i}{out.suffix}")
+        _ts = time.monotonic()
+        _c = getattr(dump.tls, "cpu", 0.0)
         size = encode_once(src, cand, kbps, path, final=final, threads=threads, audio=audio)
+        _p = getattr(dump.tls, "passes", (None, None))
+        _tries.append({"target_kbps": round(kbps, 1), "size": size, "seconds": round(time.monotonic() - _ts, 1),
+                       "pass1_s": _p[0], "pass2_s": _p[1], "fits": size <= limit,
+                       "cpu_s": round(getattr(dump.tls, "cpu", 0.0) - _c, 1)})
         attempts.append((kbps, size))
         if size <= limit and (best is None or size > best[1]):
             best = (kbps, size, path)
@@ -174,6 +189,8 @@ def encode_to_size(
         target = limit * (1 + low) / 2
         kbps *= target / size
     t = time.monotonic() - t0
+    _rec.update(seconds=round(t, 1), t_end=round(time.time() - dump.META["t_start"], 1), failed_to_fit=best is None)
+    dump.add(cand.label(), final, _rec)
     if best is None:
         raise RuntimeError(f"{cand.label()}: never got under {limit} bytes: {attempts}")
     kbps_b, size_b, path_b = best

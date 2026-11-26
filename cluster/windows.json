@@ -1,0 +1,450 @@
+[
+ {
+  "id": "w1-mechvr",
+  "path": "/videos/Replay 2024-12-13 19-45-27.mp4",
+  "start": 100,
+  "duration": 20,
+  "split": "heldout",
+  "kind": "fast 3D (VR mech cockpit)",
+  "description": "VR mech cockpit shooter replay, 1080p60, dark-ish scene with HUD overlays and fast head/mech motion, no game audio used",
+  "rerun": true,
+  "smoke": false
+ },
+ {
+  "id": "w2-dragonfist",
+  "path": "/videos/dragon fist 2024-11-21 17-53-19.mp4",
+  "start": 60,
+  "duration": 24,
+  "split": "heldout",
+  "kind": "slower 3D (bright outdoor)",
+  "description": "VR fighting game in a bright stone courtyard with trees, 1080p60, slow camera with foliage close-up near the end",
+  "rerun": true,
+  "smoke": false
+ },
+ {
+  "id": "w3-ardour",
+  "path": "/videos/ardour_ambisonics.mp4",
+  "start": 60,
+  "duration": 16,
+  "split": "heldout",
+  "kind": "screencast / UI-heavy",
+  "description": "DAW (Ardour) ambisonics screencast, 720p60, dense small UI, tiny animated panels, mostly static",
+  "rerun": true,
+  "smoke": true
+ },
+ {
+  "id": "w4-quake",
+  "path": "/videos/2026-11-25 22-05-57.mp4",
+  "start": 0,
+  "duration": 26,
+  "split": "tune",
+  "kind": "fast 3D shooter",
+  "description": "Quake, 1080p60, menu then fast descent through a noisy textured cave with muzzle flash and projectiles (S's required window, ~38 Mbps source)",
+  "rerun": true,
+  "smoke": false
+ },
+ {
+  "id": "w5-mushdark",
+  "path": "/videos/2026-09-27 19-33-52.mp4",
+  "start": 40,
+  "duration": 18,
+  "split": "tune",
+  "kind": "dark / noisy",
+  "description": "Mushi Lantern night scene, 1080p60, near-black sky with star and firefly particles, a lit lantern at the end",
+  "rerun": true,
+  "smoke": false
+ },
+ {
+  "id": "w6-ui",
+  "path": "/videos/2026-10-11 13-58-14.mp4",
+  "start": 10,
+  "duration": 30,
+  "split": "tune",
+  "kind": "screencast / UI-heavy",
+  "description": "Browser mech-model viewer, 1080p60, light page with a rotating low-poly model and dense small UI panel",
+  "rerun": true,
+  "smoke": false
+ },
+ {
+  "id": "w7-flat",
+  "path": "/videos/2026-09-14 21-21-34.mp4",
+  "start": 40,
+  "duration": 14,
+  "split": "tune",
+  "kind": "flat-shaded low-poly (nearest to 2D)",
+  "description": "Flat-shaded low-poly space station in VR, odd 1908x2162 portrait capture, 60 fps, large uniform colour areas and thin neon edges",
+  "rerun": true,
+  "smoke": true
+ },
+ {
+  "id": "w8-street",
+  "path": "/videos/2026-05-18 17-46-18.mp4",
+  "start": 60,
+  "duration": 24,
+  "split": "tune",
+  "kind": "slower 3D (detail-rich street)",
+  "description": "VRChat third-person walk through a dense Tokyo-style street, 1080p60, high-frequency signage and building detail, slow camera",
+  "rerun": true,
+  "smoke": false
+ },
+ {
+  "id": "c01",
+  "path": "/videos/2021-09-26 22-37-01.mkv",
+  "start": 63,
+  "duration": 13,
+  "split": "cluster",
+  "kind": "dated 2021-09",
+  "description": "1280x720 60fps h264 recording, 139 s long"
+ },
+ {
+  "id": "c02",
+  "path": "/videos/2025-02-16 16-42-03.mp4",
+  "start": 9,
+  "duration": 12,
+  "split": "cluster",
+  "kind": "dated 2025-02",
+  "description": "1024x1024 60fps h264 recording, 46 s long"
+ },
+ {
+  "id": "c03",
+  "path": "/videos/2026-03-22 15-28-13.mp4",
+  "start": 144,
+  "duration": 10,
+  "split": "cluster",
+  "kind": "dated 2026-03",
+  "description": "1024x1024 60fps h264 recording, 176 s long"
+ },
+ {
+  "id": "c04",
+  "path": "/videos/2026-04-03 20-46-13.mp4",
+  "start": 5,
+  "duration": 12,
+  "split": "cluster",
+  "kind": "dated 2026-04",
+  "description": "1024x1024 60fps h264 recording, 22 s long"
+ },
+ {
+  "id": "c05",
+  "path": "/videos/2026-05-18 17-57-06.mp4",
+  "start": 5,
+  "duration": 20,
+  "split": "cluster",
+  "kind": "dated 2026-05",
+  "description": "1024x1024 60fps h264 recording, 30 s long"
+ },
+ {
+  "id": "c06",
+  "path": "/videos/2026-09-26 18-20-00.mp4",
+  "start": 22,
+  "duration": 13,
+  "split": "cluster",
+  "kind": "dated 2026-09",
+  "description": "1920x1080 60fps h264 recording, 97 s long"
+ },
+ {
+  "id": "c07",
+  "path": "/videos/2026-10-09 19-37-00.mp4",
+  "start": 25,
+  "duration": 17,
+  "split": "cluster",
+  "kind": "dated 2026-10",
+  "description": "1920x1080 60fps h264 recording, 55 s long"
+ },
+ {
+  "id": "c08",
+  "path": "/videos/2026-11-25 19-25-03.mp4",
+  "start": 12,
+  "duration": 24,
+  "split": "cluster",
+  "kind": "dated 2026-11",
+  "description": "1920x1080 60fps h264 recording, 42 s long"
+ },
+ {
+  "id": "c09",
+  "path": "/videos/Replay 2024-12-13 20-24-16.mp4",
+  "start": 175,
+  "duration": 13,
+  "split": "cluster",
+  "kind": "replay",
+  "description": "1920x1080 60fps h264 recording, 299 s long"
+ },
+ {
+  "id": "c10",
+  "path": "/videos/aint the sharpest audiolink 2021-11-05 22-54-43.mp4",
+  "start": 15,
+  "duration": 25,
+  "split": "cluster",
+  "kind": "aint",
+  "description": "1280x720 60fps h264 recording, 50 s long"
+ },
+ {
+  "id": "c11",
+  "path": "/videos/beanstalker-carry-2022-03-17.mp4",
+  "start": 47,
+  "duration": 19,
+  "split": "cluster",
+  "kind": "beanstalker",
+  "description": "1280x720 60fps h264 recording, 73 s long"
+ },
+ {
+  "id": "c12",
+  "path": "/videos/bikeheadvr headturn 2026-03-23 18-02-24.mp4",
+  "start": 41,
+  "duration": 16,
+  "split": "cluster",
+  "kind": "bikeheadvr",
+  "description": "1920x1080 60fps h264 recording, 111 s long"
+ },
+ {
+  "id": "c13",
+  "path": "/videos/deemo reborn 2021-11-03 18-57-26.mkv",
+  "start": 211,
+  "duration": 12,
+  "split": "cluster",
+  "kind": "deemo",
+  "description": "1280x720 60fps h264 recording, 253 s long"
+ },
+ {
+  "id": "c14",
+  "path": "/videos/demeo2023-08-14 18-30-02.mkv",
+  "start": 208,
+  "duration": 10,
+  "split": "cluster",
+  "kind": "demeo",
+  "description": "1280x720 60fps h264 recording, 298 s long"
+ },
+ {
+  "id": "c15",
+  "path": "/videos/dragon fist 2024-11-21 17-47-24.mp4",
+  "start": 46,
+  "duration": 23,
+  "split": "cluster",
+  "kind": "dragon",
+  "description": "1920x1080 60fps h264 recording, 149 s long"
+ },
+ {
+  "id": "c16",
+  "path": "/videos/electronauts cyber 2021-11-22.mp4",
+  "start": 73,
+  "duration": 15,
+  "split": "cluster",
+  "kind": "electronauts",
+  "description": "1280x720 60fps h264 recording, 259 s long"
+ },
+ {
+  "id": "c17",
+  "path": "/videos/industrial petting playtest2024-09-29 13-29-14.mkv",
+  "start": 872,
+  "duration": 16,
+  "split": "cluster",
+  "kind": "industrial",
+  "description": "1916x1916 60fps h264 recording, 3064 s long"
+ },
+ {
+  "id": "c18",
+  "path": "/videos/leap motion piano aqua 2023-11-26 14-24-04.mkv",
+  "start": 111,
+  "duration": 11,
+  "split": "cluster",
+  "kind": "leap",
+  "description": "1280x720 60fps h264 recording, 137 s long"
+ },
+ {
+  "id": "c19",
+  "path": "/videos/leapmotionpiano2023-11-26 14-00-51.mkv",
+  "start": 5,
+  "duration": 14,
+  "split": "cluster",
+  "kind": "leapmotionpiano",
+  "description": "1280x720 60fps h264 recording, 24 s long"
+ },
+ {
+  "id": "c20",
+  "path": "/videos/maestro vr 2022-06-18 20-25-21.mkv",
+  "start": 282,
+  "duration": 22,
+  "split": "cluster",
+  "kind": "maestro",
+  "description": "1280x720 60fps h264 recording, 351 s long"
+ },
+ {
+  "id": "c21",
+  "path": "/videos/mainspring.mp4",
+  "start": 14,
+  "duration": 15,
+  "split": "cluster",
+  "kind": "mainspring",
+  "description": "1024x1024 60fps h264 recording, 42 s long"
+ },
+ {
+  "id": "c22",
+  "path": "/videos/multibox preview 2021-04-11 19-49-34.mp4",
+  "start": 62,
+  "duration": 10,
+  "split": "cluster",
+  "kind": "multibox",
+  "description": "1280x720 60fps h264 recording, 77 s long"
+ },
+ {
+  "id": "c23",
+  "path": "/videos/mushi-lantern-trailer.mp4",
+  "start": 16,
+  "duration": 23,
+  "split": "cluster",
+  "kind": "mushi",
+  "description": "1280x720 60fps h264 recording, 46 s long"
+ },
+ {
+  "id": "c24",
+  "path": "/videos/mushilantern-first-vr-2026-09-23 21-19-11.mp4",
+  "start": 51,
+  "duration": 15,
+  "split": "cluster",
+  "kind": "mushilantern",
+  "description": "3840x2160 60fps h264 recording, 79 s long"
+ },
+ {
+  "id": "c25",
+  "path": "/videos/neos 2021-08-05 19-52-40.mkv",
+  "start": 1652,
+  "duration": 22,
+  "split": "cluster",
+  "kind": "neos",
+  "description": "1280x720 60fps h264 recording, 5454 s long"
+ },
+ {
+  "id": "c26",
+  "path": "/videos/osc-grimoire hadoken 2026-05-06 16-46-43.mp4",
+  "start": 5,
+  "duration": 19,
+  "split": "cluster",
+  "kind": "osc",
+  "description": "1920x1080 60fps h264 recording, 29 s long"
+ },
+ {
+  "id": "c27",
+  "path": "/videos/oversaber 2026-04-03 14-40-15.mp4",
+  "start": 9,
+  "duration": 23,
+  "split": "cluster",
+  "kind": "oversaber",
+  "description": "1024x1024 60fps h264 recording, 104 s long"
+ },
+ {
+  "id": "c28",
+  "path": "/videos/prim 2026-09-17 17-25-18.mp4",
+  "start": 21,
+  "duration": 13,
+  "split": "cluster",
+  "kind": "prim",
+  "description": "3840x2160 60fps h264 recording, 42 s long"
+ },
+ {
+  "id": "c29",
+  "path": "/videos/quantaar 2022-02-23 18-18-35.mkv",
+  "start": 139,
+  "duration": 30,
+  "split": "cluster",
+  "kind": "quantaar",
+  "description": "1280x720 60fps h264 recording, 263 s long"
+ },
+ {
+  "id": "c30",
+  "path": "/videos/reclining game 2024-07-09 14-14-36.mp4",
+  "start": 5,
+  "duration": 17,
+  "split": "cluster",
+  "kind": "reclining",
+  "description": "1024x1024 60fps h264 recording, 28 s long"
+ },
+ {
+  "id": "c31",
+  "path": "/videos/sneeditoriumsound 2025-02-13 20-17-03.mp4",
+  "start": 13,
+  "duration": 20,
+  "split": "cluster",
+  "kind": "sneeditoriumsound",
+  "description": "1024x1024 60fps h264 recording, 66 s long"
+ },
+ {
+  "id": "c32",
+  "path": "/videos/sparseposer 2026-05-28 20-43-52.mp4",
+  "start": 9,
+  "duration": 17,
+  "split": "cluster",
+  "kind": "sparseposer",
+  "description": "1024x1024 60fps h264 recording, 35 s long"
+ },
+ {
+  "id": "c33",
+  "path": "/videos/steel crew Replay 2021-09-19 19-19-55.mkv",
+  "start": 170,
+  "duration": 26,
+  "split": "cluster",
+  "kind": "steel",
+  "description": "1280x720 60fps h264 recording, 299 s long"
+ },
+ {
+  "id": "c34",
+  "path": "/videos/syneed 2025-02-16 16-43-54.mp4",
+  "start": 15,
+  "duration": 14,
+  "split": "cluster",
+  "kind": "syneed",
+  "description": "1920x1080 60fps h264 recording, 43 s long"
+ },
+ {
+  "id": "c35",
+  "path": "/videos/udcap-piano-2025-03-06.mp4",
+  "start": 55,
+  "duration": 41,
+  "split": "cluster",
+  "kind": "udcap",
+  "description": "1920x1080 60fps h264 recording, 122 s long"
+ },
+ {
+  "id": "c36",
+  "path": "/videos/valheim elder boss 2022-01-29 23-05-40.mkv",
+  "start": 230,
+  "duration": 20,
+  "split": "cluster",
+  "kind": "valheim",
+  "description": "360x360 60fps h264 recording, 297 s long"
+ },
+ {
+  "id": "c37",
+  "path": "/videos/vox Replay 2022-04-15 19-18-23.mkv",
+  "start": 260,
+  "duration": 30,
+  "split": "cluster",
+  "kind": "vox",
+  "description": "1280x720 60fps h264 recording, 299 s long"
+ },
+ {
+  "id": "c38",
+  "path": "/videos/vrchat-scene-probe-2026-07-04 22-46-00.mkv",
+  "start": 6,
+  "duration": 20,
+  "split": "cluster",
+  "kind": "vrchat",
+  "description": "1916x1916 60fps h264 recording, 33 s long"
+ },
+ {
+  "id": "c39",
+  "path": "/videos/vrg comedy 2021-08-06 23-24-50.mkv",
+  "start": 1814,
+  "duration": 19,
+  "split": "cluster",
+  "kind": "vrg",
+  "description": "1280x720 60fps h264 recording, 5068 s long"
+ },
+ {
+  "id": "c40",
+  "path": "/videos/xranimator piano unity 2024-08-16 17-49-54.mp4",
+  "start": 60,
+  "duration": 16,
+  "split": "cluster",
+  "kind": "xranimator",
+  "description": "1920x1080 60fps h264 recording, 111 s long"
+ }
+]

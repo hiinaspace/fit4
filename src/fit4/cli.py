@@ -13,7 +13,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
-from . import ff, report
+from . import dump, ff, report
 from .boards import BOARDS, Board
 from .encode import EXT, Candidate, budget_kbps
 from .probe import BadInput, Source, probe, trim
@@ -237,11 +237,18 @@ def run(args: argparse.Namespace) -> int:
     cands = grid(src, board, codecs, args.scales, args.fps_divs)
     t0 = time.monotonic()
     log(f"screening {len(cands)} candidates ({args.jobs} at a time, fast presets)")
+    dump.META.update(input=str(args.input), start=args.start, duration=args.duration, limit=limit, jobs=args.jobs,
+                     ncpu=__import__("os").cpu_count(), loadavg_start=__import__("os").getloadavg())
+    _ts = time.monotonic()
     screen = run_stage("screening", src, cands, limit, work, final=False, jobs=args.jobs, audio=audio)
+    dump.META["screen_wall_s"] = round(time.monotonic() - _ts, 1)
+    _ts = time.monotonic()
     fin = pick_finalists(screen, args.finals)
     log(f"final encodes: {', '.join(c.label() for c in fin)}")
     finals = run_stage("final", src, fin, limit, work, final=True, jobs=args.jobs, audio=audio)
+    dump.META["final_wall_s"] = round(time.monotonic() - _ts, 1)
     chosen = max(finals, key=lambda t: t.score.primary)
+    dump.META["winner"] = chosen.cand.label()
 
     output = args.output or args.input.with_name(f"{stem}.fit4.{EXT[chosen.cand.codec]}")
     output.write_bytes(chosen.enc.path.read_bytes())
@@ -275,7 +282,10 @@ def run(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        return run(args)
+        try:
+            return run(args)
+        finally:
+            dump.write()
     except BadInput as e:
         log(f"fit4: {e}")
         return USAGE

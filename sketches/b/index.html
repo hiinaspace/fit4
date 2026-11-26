@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>fit4 sketch B - quality chart</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#14161a;--pn:#1d2026;--ln:#333944;--tx:#e4e7ec;--dim:#8d96a5;--ac:#6cb2ff;--g:#5ac477;--a:#e3b341;--r:#e5675b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.35 system-ui,sans-serif;padding:10px 14px}
+h1{font-size:14px;margin:0 0 6px;font-weight:600}h1 span{color:var(--dim);font-weight:400}
+.top{display:grid;grid-template-columns:420px 1fr;gap:10px;margin-bottom:10px}
+.pn{background:var(--pn);border:1px solid var(--ln);border-radius:6px;padding:8px}
+video{width:100%;display:block;background:#000;border-radius:4px}
+.vbar{display:flex;gap:6px;align-items:center;margin-top:5px;color:var(--dim)}
+button,input,select{font:inherit;color:var(--tx);background:#2a2f38;border:1px solid var(--ln);border-radius:4px;padding:3px 7px}
+button{cursor:pointer}button:hover:not(:disabled){border-color:var(--ac)}button:disabled{opacity:.45;cursor:default}
+input[type=number]{width:68px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.row label{color:var(--dim)}
+table{width:100%;border-collapse:collapse}
+th{font-weight:500;color:var(--dim);text-align:left;font-size:11px;padding:2px 4px}
+td{padding:3px 4px;border-top:1px solid var(--ln);white-space:nowrap}
+tr.sel td{background:#26303d}
+.tag{display:inline-block;padding:0 6px;border-radius:9px;font-size:11px;font-weight:600;color:#111}
+.t-g{background:var(--g)}.t-a{background:var(--a)}.t-r{background:var(--r)}
+.db{font-weight:700;font-size:15px}
+.chartwrap{position:relative}
+canvas{width:100%;height:330px;display:block;cursor:crosshair;border-radius:4px;background:#101216}
+.legend{color:var(--dim);font-size:11px;margin-top:4px;display:flex;gap:14px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:4px}
+.bot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+pre{margin:0;background:#101216;border:1px solid var(--ln);border-radius:4px;padding:6px;white-space:pre-wrap;word-break:break-all;font-size:12px;max-height:110px;overflow:auto}
+.lad{position:relative}.lad img{width:100%;display:block}
+.lcols{font-size:11px;color:var(--dim);margin:3px 0}
+
+.note{color:var(--dim);font-size:11px}
+</style></head><body>
+<h1>fit4 <span>B - quality chart: drag band edges on the chart; hover to scrub the video</span></h1>
+<div class="top">
+ <div class="pn">
+  <video id="vid" src="../data/proxy.mp4" controls preload="auto" muted></video>
+  <div class="vbar"><span id="tnow">0.0 s</span><button id="mkStart">start = here</button><button id="mkEnd">end = here</button>
+   <label><input type="checkbox" id="hov" checked> hover scrubs</label></div>
+  <div class="vbar"><span>540p30 proxy; the encode will be better than this looks, but its dB is what's predicted.</span></div>
+ </div>
+ <div class="pn">
+  <div class="row">
+   <label>size limit <input id="lim" type="number" value="4194304" step="1048576" style="width:100px"> B</label>
+   <label><input type="checkbox" id="aud"> audio</label>
+   <button id="addPart">+ part at playhead</button>
+   <span class="note" id="tot"></span>
+  </div>
+  <table id="tbl"><thead><tr><th>#</th><th>start</th><th>end</th><th>dur</th><th>predicted</th><th>candidate</th><th>video kbps</th><th></th></tr></thead><tbody></tbody></table>
+  <div class="row" style="margin-top:8px">
+   <b>Suggest split</b><span class="note">of selected part:</span>
+   <button id="sp2">2 parts</button><button id="sp3">3 parts</button><span class="note" id="spmsg"></span>
+  </div>
+  <div class="row">
+   <b>How much fits</b>
+   <label>from playhead at <input id="bar" type="number" value="30" step="0.5" style="width:56px"> dB</label>
+   <span id="fitout" class="db"></span>
+  </div>
+ </div>
+</div>
+<div class="pn">
+ <div class="chartwrap"><canvas id="cv"></canvas></div>
+ <div class="legend">
+  <span><i style="background:#4a6f99"></i>content cost (left, bytes at fixed quality)</span>
+  <span><i style="background:#f0f0f0"></i>band level = part's predicted dB (right axis)</span>
+  <span><i style="background:#c77dff"></i>dB if a part started here and ran <input id="nlen" type="number" value="20" step="1" style="width:50px;padding:0 3px"> s</span>
+  <span><i style="background:#ffffff;height:1px"></i>playhead</span>
+  <span>drag edges, drag band body to move, click empty = seek, click band = select</span>
+ </div>
+</div>
+<div class="bot">
+ <div class="pn"><b>Commands</b> <button id="copy">copy</button> <button disabled title="sketch only">Encode</button>
+  <pre id="cmd"></pre></div>
+ <div class="pn"><b>What the dB looks like</b>
+  <select id="ladsel"><option value="texture">rock texture</option><option value="enemy">enemy</option><option value="context">context</option></select>
+  <span class="note" id="ladnote"></span>
+  <div class="lcols" id="lcols"></div><div class="lad"><img id="lad" src="../data/ladder/quality-bar-texture.png"></div></div>
+</div>
+<script type="module" src="app.js"></script>
+</body></html>

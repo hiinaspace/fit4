@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>fit4 · filmstrip</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#111316;--panel:#181b20;--line:#2a2f37;--fg:#dde1e7;--dim:#8a929e;--cost:#e0912f;--bad:#e5484d;--mid:#e5a23a;--ok:#4cc38a;--accent:#5aa9ff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:13px/1.35 system-ui,sans-serif}
+body{display:grid;grid-template-columns:1fr 372px;height:100vh;overflow:hidden}
+main{padding:8px 10px;overflow:auto;min-width:0}
+aside{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+h1{font-size:13px;margin:0 0 6px;font-weight:600;display:flex;gap:12px;align-items:baseline}
+h1 span{color:var(--dim);font-weight:400}
+button,input,select{font:inherit;color:var(--fg);background:#22262d;border:1px solid var(--line);border-radius:4px}
+button{padding:3px 8px;cursor:pointer}button:hover:not(:disabled){background:#2b313a}
+button:disabled{opacity:.45;cursor:default}
+input[type=number]{width:62px;padding:2px 4px}
+/* grid */
+#grid{display:grid;grid-template-columns:34px repeat(15,1fr);gap:3px 2px;user-select:none}
+.rl{color:var(--dim);font-size:10px;text-align:right;padding-right:3px;align-self:start;padding-top:2px}
+.th{position:relative;cursor:pointer;background:#000;aspect-ratio:16/9.9;overflow:hidden;border-radius:2px}
+.th img{width:100%;height:calc(100% - 7px);object-fit:cover;display:block;pointer-events:none}
+.th.dim img{opacity:.45}
+.th .cost{position:absolute;left:0;right:0;bottom:0;height:7px;background:#1a1d22}
+.th .cost i{position:absolute;left:0;bottom:0;width:100%;background:var(--cost)}
+.th .marks{position:absolute;left:0;right:0;top:0;pointer-events:none}
+.th .marks b{display:block;position:relative;height:4px;margin-bottom:1px}
+.th .marks b i{position:absolute;top:0;bottom:0}
+.th .chip{position:absolute;left:2px;top:7px;font-size:10px;font-weight:700;padding:0 3px;border-radius:2px;color:#000;pointer-events:none;white-space:nowrap}
+.th.play{outline:2px solid #fff;outline-offset:-2px;z-index:1}
+.th.drag{outline:2px dashed var(--accent);outline-offset:-2px}
+.th .sec{position:absolute;right:2px;bottom:8px;font-size:9px;color:#ffffffa0;text-shadow:0 0 2px #000;pointer-events:none}
+/* bottom */
+#bottom{display:grid;grid-template-columns:440px 262px 1fr;gap:12px;margin-top:8px}
+video{width:440px;height:248px;background:#000;display:block}
+.ctl{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.lbl{color:var(--dim);font-size:11px;margin-bottom:3px}
+#tl{display:block;width:100%;height:46px;margin-top:6px;cursor:pointer;background:#15181c;border-radius:3px}
+.tiles{display:flex;flex-direction:column;gap:4px}
+.tile{width:250px;height:141px;background-repeat:no-repeat;border-radius:2px}
+.chips{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+.chips button{padding:1px 5px;font-size:11px}.chips button.on{background:var(--accent);color:#000;border-color:var(--accent)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:8px}
+/* side */
+.sec-h{padding:8px 12px;border-bottom:1px solid var(--line)}
+#parts{flex:1;overflow:auto;padding:8px 10px;display:flex;flex-direction:column;gap:8px}
+.part{border:1px solid var(--line);border-left:5px solid var(--c);border-radius:4px;padding:6px 8px;background:#1d2127}
+.part.sel{background:#232932;border-color:var(--c)}
+.part .row{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.part .db{font-size:22px;font-weight:700}
+.badge{font-size:11px;padding:1px 6px;border-radius:9px;color:#000}
+.rough{background:var(--bad)}.soft{background:var(--mid)}.good{background:var(--ok)}
+.dim{color:var(--dim)}
+.cands{font-size:11px;margin-top:4px;font-variant-numeric:tabular-nums}
+.cands div{display:flex;justify-content:space-between}
+#out{padding:8px 12px;border-top:1px solid var(--line)}
+textarea{width:100%;height:92px;background:#0e1013;color:#cfd6df;border:1px solid var(--line);border-radius:4px;font:11px/1.4 ui-monospace,monospace;resize:none}
+.x{margin-left:auto;padding:0 6px}
+</style></head><body>
+<main>
+  <h1>fit4 · filmstrip <span>drag across seconds to make a part · click = play from there · shift-click = part from last click · cost bar under each second = bytes needed</span></h1>
+  <div id="grid"></div>
+  <svg id="tl" viewBox="0 0 1000 46" preserveAspectRatio="none"></svg>
+  <div id="bottom">
+    <div>
+      <video id="v" src="../data/proxy.mp4" muted preload="auto"></video>
+      <div class="ctl">
+        <button id="pp">Play</button><span id="tc" style="font-variant-numeric:tabular-nums;min-width:90px">0.0 / 119.7</span>
+        <button id="setS" title="[">Start here</button><button id="setE" title="]">End here</button>
+        <label class="dim"><input type="checkbox" id="snd"> sound</label>
+      </div>
+    </div>
+    <div>
+      <div class="lbl" id="ladCap">what dB looks like</div>
+      <div class="tiles"><div class="tile" id="tTex"></div><div class="tile" id="tEn"></div></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="box" id="fits">
+      <div class="lbl">How much fits</div>
+      <div class="ctl" style="margin-top:0">from
+        <select id="fFrom"><option value="play">playhead</option><option value="part">selected part start</option></select>
+        at ≥ <select id="fBar"><option>26</option><option>28</option><option selected>30</option><option>31</option></select> dB
+      </div>
+      <div id="fRes" style="font-size:15px;margin:8px 0 6px"></div>
+      <div class="ctl" style="margin-top:0"><button id="fMake">Make part of that</button><button id="fSet">Set selected end</button></div>
+    </div>
+  </div>
+</main>
+<aside>
+  <div class="sec-h ctl" style="margin:0">
+    <label>Limit <input type="number" id="lim" value="4" step="0.25" min="0.5"> MiB</label>
+    <label><input type="checkbox" id="aud"> audio</label>
+    <button id="add" class="x" title="new part at playhead">+ Part</button>
+  </div>
+  <div id="parts"></div>
+  <div id="out">
+    <div class="ctl" style="margin:0 0 4px;justify-content:space-between"><span class="lbl" style="margin:0">fit4 commands</span>
+      <span><button id="copy">Copy</button> <button disabled title="sketch: not wired">Encode</button></span></div>
+    <textarea id="cmd" readonly></textarea>
+  </div>
+</aside>
+<script type="module">
+import {rank,best,fitsFor,bestSplit,complexity} from '../shared/predict.js';
+const probe = await (await fetch('../data/probe.json')).json();
+const INPUT='/mnt/pool/videos/2026-11-25 22-05-57.mp4';
+const DUR=probe.duration, N=probe.timeline.length, PER=15;
+const COL=['#4fd1e8','#a3e635','#c084fc','#f472b6','#facc15','#60a5fa'];
+const LAD=[19.4,26.0,28.0,29.8,31.2];
+const $=s=>document.querySelector(s), r1=x=>Math.round(x*10)/10;
+const st={parts:[{s:0,e:51}],sel:0,anchor:0,drag:null,ladder:null,limit:4194304,audio:false};
+const maxC=Math.max(...probe.timeline);
+const v=$('#v');
+
+// grid
+const grid=$('#grid'), ths=[];
+for(let i=0;i<N;i++){
+  if(i%PER===0){const l=document.createElement('div');l.className='rl';l.textContent=`${Math.floor(i/60)}:${String(i%60).padStart(2,'0')}`;grid.append(l)}
+  const t=document.createElement('div');t.className='th';t.dataset.i=i;
+  t.innerHTML=`<img loading="lazy" src="../data/thumbs/${String(i+1).padStart(3,'0')}.jpg"><div class="cost"><i style="height:${Math.max(6,probe.timeline[i]/maxC*100)}%;opacity:${.35+.65*probe.timeline[i]/maxC}"></i></div><div class="marks"></div>`;
+  t.title=`${i}s · cost ${(probe.timeline[i]/probe.reel_complexity).toFixed(2)}× avg`;
+  grid.append(t);ths.push(t);
+}
+const idxOf=e=>{const t=e.target.closest('.th');return t?+t.dataset.i:null};
+grid.addEventListener('mousedown',e=>{const i=idxOf(e);if(i==null)return;e.preventDefault();
+  if(e.shiftKey){const a=Math.min(st.anchor,i),b=Math.max(st.anchor,i);addPart(a,Math.min(DUR,b+1));return}
+  st.drag={a:i,b:i};paintDrag()});
+grid.addEventListener('mouseover',e=>{const i=idxOf(e);if(i==null)return;
+  if(st.drag){st.drag.b=i;paintDrag()}
+  if(v.paused&&Math.abs(v.currentTime-(i+.5))>.2)v.currentTime=Math.min(DUR-.05,i+.5)});
+addEventListener('mouseup',()=>{const d=st.drag;if(!d)return;st.drag=null;paintDrag();
+  if(d.a===d.b){st.anchor=d.a;v.currentTime=d.a;v.play()}
+  else{const a=Math.min(d.a,d.b),b=Math.max(d.a,d.b);st.anchor=d.a;addPart(a,Math.min(DUR,b+1))}});
+function paintDrag(){const d=st.drag;ths.forEach((t,i)=>t.classList.toggle('drag',!!d&&d.a!==d.b&&i>=Math.min(d.a,d.b)&&i<=Math.max(d.a,d.b)))}
+
+function addPart(s,e){st.parts.push({s:r1(s),e:r1(e)});st.sel=st.parts.length-1;build();refresh()}
+function lim(){return st.limit}
+function pred(p){const d=p.e-p.s;if(d<0.5)return null;return rank(probe,p.s,p.e,lim(),st.audio)}
+const tier=db=>db==null?['none','no fit']:db<28?['rough','rough · textures smeared']:db<30?['soft','soft · textures thin']:['good','textures readable'];
+const fmt=x=>x.toFixed(1);
+const ext=l=>l?.startsWith('vp9')?'webm':'mp4';
+
+// parts list
+function build(){
+  const box=$('#parts');box.innerHTML='';
+  st.parts.forEach((p,k)=>{
+    const d=document.createElement('div');d.className='part';d.dataset.k=k;d.style.setProperty('--c',COL[k%COL.length]);
+    d.innerHTML=`<div class="ctl" style="margin:0"><b>Part ${k+1}</b>
+      <input type="number" step="0.1" min="0" data-f="s"> – <input type="number" step="0.1" min="0" data-f="e"> s
+      <span class="dim" data-r="dur"></span>
+      <button class="x" data-a="del" title="remove">✕</button></div>
+      <div class="row"><span class="db" data-r="db"></span><span class="badge" data-r="badge"></span></div>
+      <div class="dim" data-r="cand" style="margin-top:2px"></div>
+      <div class="row"><button data-a="s2">Split 2</button><button data-a="s3">Split 3</button><button data-a="seek">Play</button><span class="dim" data-r="msg"></span></div>
+      <div class="cands" data-r="cands"></div>`;
+    d.addEventListener('click',e=>{if(e.target.closest('input'))return;st.sel=k;st.ladder=null;refresh()});
+    d.addEventListener('input',e=>{const f=e.target.dataset.f;if(!f)return;const x=parseFloat(e.target.value);if(isNaN(x))return;p[f]=Math.max(0,Math.min(DUR,x));refresh(true)});
+    d.addEventListener('change',()=>{if(p.e<p.s)[p.s,p.e]=[p.e,p.s];refresh()});
+    d.addEventListener('click',e=>{const a=e.target.dataset.a;if(!a)return;
+      if(a==='del'){st.parts.splice(k,1);st.sel=Math.min(st.sel,st.parts.length-1);build();refresh()}
+      if(a==='seek'){v.currentTime=p.s;v.play()}
+      if(a==='s2'||a==='s3')split(k,a==='s2'?2:3)});
+    box.append(d)});
+}
+function split(k,n){const p=st.parts[k];const r=bestSplit(probe,p.s,p.e,lim(),n,st.audio);
+  const m=$(`.part[data-k="${k}"] [data-r=msg]`);
+  if(!r){m.textContent='no split fits';return}
+  const edges=[p.s,...r.cuts,p.e],np=[];for(let i=0;i<edges.length-1;i++)np.push({s:r1(edges[i]),e:r1(edges[i+1])});
+  st.parts.splice(k,1,...np);st.sel=k;build();refresh()}
+
+function nearestLadder(db){let bi=0;LAD.forEach((x,i)=>{if(Math.abs(x-db)<Math.abs(LAD[bi]-db))bi=i});return bi}
+
+function refresh(typing){
+  const rows=[...document.querySelectorAll('.part')];
+  st.parts.forEach((p,k)=>{
+    const d=rows[k];if(!d)return;d.classList.toggle('sel',k===st.sel);
+    for(const f of ['s','e']){const i=d.querySelector(`[data-f=${f}]`);if(document.activeElement!==i)i.value=fmt(p[f])}
+    const R=pred(p),b=R?.[0],db=b?.db;p.pred=b&&db!=null?b:null;
+    const [cls,txt]=tier(db);
+    d.querySelector('[data-r=dur]').textContent=`${fmt(p.e-p.s)} s`;
+    d.querySelector('[data-r=db]').textContent=db==null?'–':fmt(db)+' dB';
+    const bd=d.querySelector('[data-r=badge]');bd.className='badge '+cls;bd.textContent=txt;
+    d.querySelector('[data-r=cand]').textContent=db==null?'nothing fits this long':`${b.label} · video ${Math.round(b.kbps)} kbps · cost ${complexity(probe,p.s,p.e).toFixed(2)}×`;
+    d.querySelector('[data-r=cands]').innerHTML=k===st.sel&&R?R.slice(0,4).map(c=>`<div><span>${c.label}</span><span>${c.db==null?'–':fmt(c.db)+' dB'}</span></div>`).join(''):'';
+  });
+  marks();timeline();ladder();output();fits();
+}
+
+function marks(){
+  const showDim=st.parts.length>0;
+  ths.forEach((t,i)=>{
+    const m=t.querySelector('.marks');let h='',inAny=false,chip='';
+    st.parts.forEach((p,k)=>{
+      const a=Math.max(p.s,i),b=Math.min(p.e,i+1);
+      if(b>a){inAny=true;h+=`<b><i style="left:${(a-i)*100}%;width:${(b-a)*100}%;background:${COL[k%COL.length]};${k===st.sel?'':'opacity:.75'}"></i></b>`}
+      if(p.s>=i&&p.s<i+1){const db=p.pred?.db;chip+=`<div class="chip" style="background:${COL[k%COL.length]};top:${7+(chip.split('chip').length-1)*13}px">P${k+1} ${db==null?'–':fmt(db)}</div>`}
+    });
+    m.innerHTML=h+chip;t.classList.toggle('dim',showDim&&!inAny);
+  });
+}
+
+// timeline strip
+const tl=$('#tl');
+function timeline(){
+  const W=1000,H=46,bw=W/N;let s='';
+  st.parts.forEach((p,k)=>{s+=`<rect x="${p.s/DUR*W}" y="0" width="${(p.e-p.s)/DUR*W}" height="${H}" fill="${COL[k%COL.length]}" opacity="${k===st.sel?.3:.15}"/>`});
+  probe.timeline.forEach((c,i)=>{const h=c/maxC*(H-6);s+=`<rect x="${i*bw+.5}" y="${H-h}" width="${bw-1}" height="${h}" fill="var(--cost)" opacity="${.4+.6*c/maxC}"/>`});
+  s+=`<line id="ph" x1="0" x2="0" y1="0" y2="${H}" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  tl.innerHTML=s;movePH();
+}
+function movePH(){const l=$('#ph');if(l){const x=v.currentTime/DUR*1000;l.setAttribute('x1',x);l.setAttribute('x2',x)}}
+tl.addEventListener('click',e=>{const r=tl.getBoundingClientRect();v.currentTime=(e.clientX-r.left)/r.width*DUR});
+
+// ladder
+const chips=$('#chips');
+['auto',...LAD].forEach(x=>{const b=document.createElement('button');b.textContent=x==='auto'?'auto':x;b.onclick=()=>{st.ladder=x==='auto'?null:LAD.indexOf(x);ladder()};chips.append(b)});
+function ladder(){
+  const p=st.parts[st.sel];const db=p?.pred?.db;
+  const auto=db==null?0:nearestLadder(db);const i=st.ladder??auto;
+  const idx=i+1; // column 0 = source
+  for(const [id,f] of [['#tTex','quality-bar-texture'],['#tEn','quality-bar-enemy']]){
+    const t=$(id);t.style.backgroundImage=`url(../data/ladder/${f}.png)`;t.style.backgroundSize='750px 282px';t.style.backgroundPosition=`${-(idx%3)*250}px ${-Math.floor(idx/3)*141}px`}
+  $('#ladCap').innerHTML=`<b>${LAD[i]} dB</b> tile${st.ladder==null&&p?` · nearest to Part ${st.sel+1} (${db==null?'–':fmt(db)})`:' · pinned'} <span class="dim">texture / enemy</span>`;
+  [...chips.children].forEach((b,j)=>b.classList.toggle('on',j===0?st.ladder==null:j-1===i&&st.ladder!=null));
+}
+
+// fits
+let fitRes=0,fitFrom=0;
+function fits(){
+  const from=$('#fFrom').value==='play'?v.currentTime:(st.parts[st.sel]?.s??0);fitFrom=r1(from);
+  const bar=+$('#fBar').value;fitRes=fitsFor(probe,fitFrom,lim(),bar,st.audio);
+  $('#fRes').innerHTML=`<b>${fmt(fitRes)} s</b> fit from ${fmt(fitFrom)} s<br><span class="dim">→ ends at ${fmt(fitFrom+fitRes)} s, ≥ ${bar} dB</span>`;
+}
+let fT;const fitsSoon=()=>{clearTimeout(fT);fT=setTimeout(fits,150)};
+$('#fFrom').onchange=fits;$('#fBar').onchange=fits;
+$('#fMake').onclick=()=>{if(fitRes>0)addPart(fitFrom,fitFrom+fitRes)};
+$('#fSet').onclick=()=>{const p=st.parts[st.sel];if(p&&fitRes>0){p.s=fitFrom;p.e=r1(fitFrom+fitRes);refresh()}};
+
+// output
+function output(){
+  $('#cmd').value=st.parts.map((p,k)=>`fit4 '${INPUT}' --start ${fmt(p.s)} --end ${fmt(p.e)}${st.audio?'':' --no-audio'} --limit ${st.limit} -o part${k+1}.${ext(p.pred?.label)}`).join('\n');
+}
+$('#copy').onclick=async()=>{const b=$('#copy');try{await navigator.clipboard.writeText($('#cmd').value)}catch{$('#cmd').select();document.execCommand('copy')}b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1000)};
+
+// settings & video
+$('#lim').oninput=e=>{const x=parseFloat(e.target.value);if(x>0){st.limit=Math.round(x*1048576);refresh()}};
+$('#aud').onchange=e=>{st.audio=e.target.checked;refresh()};
+$('#snd').onchange=e=>{v.muted=!e.target.checked};
+$('#add').onclick=()=>{const s=Math.min(v.currentTime,DUR-5);addPart(s,s+10)};
+$('#pp').onclick=()=>v.paused?v.play():v.pause();
+v.onplay=v.onpause=()=>$('#pp').textContent=v.paused?'Play':'Pause';
+$('#setS').onclick=()=>{const p=st.parts[st.sel];if(p){p.s=r1(v.currentTime);refresh()}};
+$('#setE').onclick=()=>{const p=st.parts[st.sel];if(p){p.e=r1(v.currentTime);refresh()}};
+let lastI=-1;
+const tick=()=>{const t=v.currentTime;$('#tc').textContent=`${t.toFixed(1)} / ${DUR.toFixed(1)}`;
+  const i=Math.min(N-1,Math.floor(t));if(i!==lastI){ths[lastI]?.classList.remove('play');ths[i].classList.add('play');lastI=i}
+  movePH();if($('#fFrom').value==='play'&&!v.paused)fitsSoon();requestAnimationFrame(tick)};
+v.addEventListener('seeked',()=>$('#fFrom').value==='play'&&fitsSoon());
+addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea'))return;
+  if(e.key===' '){e.preventDefault();$('#pp').click()}if(e.key==='[')$('#setS').click();if(e.key===']')$('#setE').click()});
+build();refresh();tick();
+</script></body></html>

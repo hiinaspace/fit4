@@ -59,18 +59,23 @@ def run_trials(
     threads = max(2, (os.cpu_count() or 4) // jobs)
     low, tries = (0.975, 4) if final else (0.95, 3)
 
-    def one(c: Candidate) -> Trial:
-        enc = encode_to_size(
-            src,
-            c,
-            limit,
-            work,
-            final=final,
-            threads=threads,
-            audio=audio,
-            low=low,
-            max_tries=tries,
-        )
+    def one(c: Candidate) -> Trial | None:
+        try:
+            enc = encode_to_size(
+                src,
+                c,
+                limit,
+                work,
+                final=final,
+                threads=threads,
+                audio=audio,
+                low=low,
+                max_tries=tries,
+            )
+        except RuntimeError as e:  # one candidate that can't reach the limit shouldn't sink the sweep
+            log(f"  {c.label():<18} skipped: {e}")
+            on_done()
+            return None
         sc = score(src, enc.path, enc.path.with_suffix(".xpsnr.txt"))
         log(
             f"  {c.label():<18} {enc.size / 1e6:6.3f} MB  {enc.kbps:5.0f} kbps  "
@@ -80,7 +85,10 @@ def run_trials(
         return Trial(enc, sc)
 
     with ThreadPoolExecutor(max_workers=jobs) as ex:
-        return list(ex.map(one, cands))
+        trials = [t for t in ex.map(one, cands) if t is not None]
+    if not trials:
+        raise RuntimeError("every candidate failed to reach the size limit; try a larger --limit or a shorter clip")
+    return trials
 
 
 def pick_finalists(trials: list[Trial], n: int) -> list[Candidate]:

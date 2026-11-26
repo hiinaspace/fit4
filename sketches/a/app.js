@@ -1,4 +1,4 @@
-import { rank, best, fitsFor, bestSplit, complexity } from "../shared/predict.js";
+import { best, bestSplit, complexity } from "../shared/predict.js";
 
 const P = await (await fetch("../data/probe.json")).json();
 const D = P.duration, INPUT = "/mnt/pool/videos/2026-11-25 22-05-57.mp4";
@@ -11,7 +11,7 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const fmt = (x) => x.toFixed(1);
 
 let nextId = 1;
-const st = { parts: [], sel: null, limitMiB: 4, audio: false, bar: 28, from: "head", pin: null, fit: null, stopAt: null };
+const st = { parts: [], sel: null, limitMiB: 4, audio: false, from: "head", pin: null, curve: null, stopAt: null };
 try { const s = JSON.parse(localStorage.getItem("fit4-a") || "null"); if (s?.parts?.length) { st.parts = s.parts; st.limitMiB = s.limitMiB ?? 4; st.audio = !!s.audio; nextId = Math.max(...s.parts.map((p) => p.id)) + 1; } } catch {}
 if (!st.parts.length) st.parts = [{ id: nextId++, s: 0, e: 51 }];
 st.sel = st.parts[0].id;
@@ -41,7 +41,7 @@ function buildTrack() {
     const k = clamp(Math.floor(((i + 0.5) * D) / n) + 1, 1, 120), e = document.createElement("i");
     e.style.width = w + "px"; e.style.backgroundImage = `url(../data/thumbs/${String(k).padStart(3, "0")}.jpg)`; film.append(e);
   }
-  const c = $("cost"), dpr = devicePixelRatio || 1, H = 84;
+  const c = $("cost"), dpr = devicePixelRatio || 1, H = 52;
   c.width = W * dpr; c.height = H * dpr;
   const g = c.getContext("2d"); g.scale(dpr, dpr);
   const mx = Math.max(...P.timeline), sw = W / D;
@@ -52,7 +52,7 @@ function buildTrack() {
   });
   const ay = H - (P.reel_complexity / mx) * (H - 14);
   g.strokeStyle = "#ffffff77"; g.setLineDash([4, 4]); g.beginPath(); g.moveTo(0, ay); g.lineTo(W, ay); g.stroke();
-  g.setLineDash([]); g.fillStyle = "#ffffffaa"; g.font = "10px system-ui"; g.fillText("content cost per second (dashed = reel average): taller/hotter = more bytes for the same quality", 6, 11);
+  g.setLineDash([]); g.fillStyle = "#ffffffaa"; g.font = "10px system-ui"; g.fillText("content cost per second: taller/hotter = more bytes for the same quality", 6, 11);
 }
 
 function renderTrack() {
@@ -73,8 +73,6 @@ function renderTrack() {
     el.querySelector(".lab").textContent = `P${st.parts.indexOf(p) + 1} · ${fmt(p.e - p.s)}s · ${pr ? fmt(pr.db) + " dB" : "n/a"}`;
   }
   for (const el of [...lane.children, ...bands.children]) if (!seen.has(+el.dataset.id)) el.remove();
-  const fb = $("fitbar");
-  if (st.fit) { fb.style.display = "block"; fb.style.left = X(st.fit.a); fb.style.width = (st.fit.d / D) * 100 + "%"; } else fb.style.display = "none";
   placeHead();
 }
 function placeHead() { $("head").style.left = X(vid.currentTime || 0); $("clock").textContent = `${fmt(vid.currentTime || 0)} / ${fmt(D)} s`; }
@@ -153,34 +151,91 @@ function addPart(s, e) {
 function removePart(id) {
   st.parts = st.parts.filter((p) => p.id !== id); if (st.sel === id) st.sel = st.parts[0]?.id ?? null; refresh();
 }
-let fitTimer;
-function computeFit() {
-  clearTimeout(fitTimer);
-  fitTimer = setTimeout(() => {
-    const a = st.from === "part" ? selPart()?.s ?? vid.currentTime : vid.currentTime;
-    const d = fitsFor(P, a, limit(), st.bar, st.audio);
-    st.fit = { a, d };
-    $("fitsout").textContent = d ? `${fmt(a)}s → ${fmt(a + d)}s = ${fmt(d)} s fit` : `nothing fits from ${fmt(a)}s at ${st.bar} dB`;
-    renderTrack();
-  }, 60);
+/* ---------- quality curve ----------
+   For an anchor a (the playhead, or the selected part's start), each x on the
+   timeline gets the best predicted dB for encoding [a, x] (x after a) or
+   [x, a] (x before a, playhead mode only). Peaks near the anchor, falls off
+   with length, and dips over costly content. */
+const QMIN = 22, QMAX = 34, BANDS = [[30, "#7bd88f", "30 readable"], [28, "#e9d46b", "28 texture going"], [26, "#f4a261", "26 smeared"], [-1, "#ff6b6b", "below 26"]];
+const qcol = (db) => BANDS.find((b) => db >= b[0])[1];
+let curveTimer, lastCurveAt = 0;
+function anchor() { return st.from === "part" && selPart() ? selPart().s : vid.currentTime || 0; }
+function computeCurve() {
+  const a = anchor(), step = 0.5, pts = [];
+  for (let x = 0; x <= D + 1e-6; x += step) {
+    const lo = Math.min(a, x), hi = Math.max(a, x);
+    if (st.from === "part" && x < a) { pts.push([x, undefined]); continue; }
+    if (hi - lo < 1) { pts.push([x, QMAX]); continue; }
+    const r = best(P, lo, hi, limit(), st.audio);
+    pts.push([x, r ? r.db : null, r]);
+  }
+  st.curve = { a, pts };
+  drawCurve();
+}
+function scheduleCurve(now = false) {
+  clearTimeout(curveTimer);
+  if (now) return computeCurve();
+  curveTimer = setTimeout(computeCurve, 40);
+}
+function drawCurve() {
+  const c = $("qc"), W = track.clientWidth, H = 92, dpr = devicePixelRatio || 1;
+  if (c.width !== W * dpr) { c.width = W * dpr; c.height = H * dpr; }
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const Y = (db) => H - 4 - ((Math.min(QMAX, Math.max(QMIN, db)) - QMIN) / (QMAX - QMIN)) * (H - 10);
+  g.font = "10px system-ui";
+  for (const [lv, col] of BANDS.slice(0, 3)) {
+    g.strokeStyle = col + "55"; g.setLineDash([3, 4]); g.beginPath(); g.moveTo(0, Y(lv)); g.lineTo(W, Y(lv)); g.stroke();
+  }
+  g.setLineDash([]);
+  const cv = st.curve; if (!cv) return;
+  const sx = (t) => (t / D) * W;
+  // fill under the curve per segment, coloured by band
+  for (let i = 0; i < cv.pts.length - 1; i++) {
+    const [x0, d0] = cv.pts[i], [x1, d1] = cv.pts[i + 1];
+    if (d0 === undefined || d1 === undefined) continue;
+    if (d0 === null || d1 === null) { g.fillStyle = "#ff6b6b22"; g.fillRect(sx(x0), 0, sx(x1) - sx(x0) + 0.5, H); continue; }
+    const col = qcol((d0 + d1) / 2);
+    g.fillStyle = col + "30"; g.beginPath(); g.moveTo(sx(x0), H); g.lineTo(sx(x0), Y(d0)); g.lineTo(sx(x1), Y(d1)); g.lineTo(sx(x1), H); g.fill();
+    g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.moveTo(sx(x0), Y(d0)); g.lineTo(sx(x1), Y(d1)); g.stroke();
+  }
+  g.lineWidth = 1;
+  // anchor marker
+  g.strokeStyle = "#ffffffaa"; g.beginPath(); g.moveTo(sx(cv.a), 0); g.lineTo(sx(cv.a), H); g.stroke();
+  // labels
+  g.fillStyle = "#ffffffaa";
+  g.fillText(st.from === "part" ? "predicted dB if the selected part ended here" : "predicted dB for a part from the playhead to here (either side)", 6, 11);
+  g.textAlign = "right"; for (const [lv, col, name] of BANDS.slice(0, 3)) { g.fillStyle = col; g.fillText(name, W - 4, Y(lv) + 11); } g.textAlign = "left";
+  // where the selected part's end sits on the curve
+  const p = selPart();
+  if (p && st.from === "part") { const pr = pred(p); if (pr) { g.fillStyle = "#fff"; g.beginPath(); g.arc(sx(p.e), Y(pr.db), 3.5, 0, 7); g.fill(); } }
+}
+function curveReadout(t) {
+  const cv = st.curve; if (!cv) return;
+  const i = Math.round(t / 0.5), pt = cv.pts[Math.min(cv.pts.length - 1, Math.max(0, i))];
+  if (!pt || pt[1] === undefined) { $("fitsout").textContent = ""; return; }
+  const lo = Math.min(cv.a, pt[0]), hi = Math.max(cv.a, pt[0]);
+  $("fitsout").textContent = pt[1] === null ? `${fmt(lo)}–${fmt(hi)} s (${fmt(hi - lo)} s): no codec fits` : hi - lo < 1 ? "" :
+    `${fmt(lo)}–${fmt(hi)} s (${fmt(hi - lo)} s) → ${fmt(pt[1])} dB · ${pt[2].label}`;
 }
 function refresh(keepCards = false) {
   if (!keepCards || cards.size !== st.parts.length) buildCards();
   st.parts.sort((a, b) => a.s - b.s);
   updateCards(); renderTrack(); renderLadder(); renderCmds(); save();
-  if (!keepCards || true) computeFit();
+  scheduleCurve();
 }
 
 /* ---------- interaction: track ---------- */
 const tAt = (ev) => clamp(((ev.clientX - track.getBoundingClientRect().left) / track.clientWidth) * D, 0, D);
 function seek(t) { vid.currentTime = clamp(t, 0, D - 0.05); placeHead(); }
 let scrubbing = false;
-for (const id of ["cost", "film", "ruler"]) {
+for (const id of ["cost", "film", "ruler", "qc"]) {
   $(id).addEventListener("pointerdown", (ev) => { scrubbing = true; $(id).setPointerCapture(ev.pointerId); seek(tAt(ev)); });
   $(id).addEventListener("pointermove", (ev) => { if (scrubbing) seek(tAt(ev)); });
-  $(id).addEventListener("pointerup", () => { scrubbing = false; computeFit(); });
+  $(id).addEventListener("pointerup", () => { scrubbing = false; scheduleCurve(); });
 }
-vid.addEventListener("seeked", () => { if (st.from === "head") computeFit(); });
+vid.addEventListener("seeked", () => { if (st.from === "head") scheduleCurve(); });
+$("qc").addEventListener("mousemove", (ev) => curveReadout(tAt(ev)));
+$("qc").addEventListener("mouseleave", () => ($("fitsout").textContent = ""));
 
 $("lane").addEventListener("pointerdown", (ev) => {
   const partEl = ev.target.closest(".part");
@@ -216,16 +271,16 @@ $("play").onclick = () => { st.stopAt = null; vid.paused ? vid.play() : vid.paus
 $("playpart").onclick = () => { const p = selPart(); if (!p) return; seek(p.s); st.stopAt = p.e; vid.play(); };
 vid.onclick = $("play").onclick;
 vid.addEventListener("play", () => ($("play").textContent = "Pause"));
-vid.addEventListener("pause", () => { $("play").textContent = "Play"; computeFit(); });
-(function tick() { if (!vid.paused) { placeHead(); if (st.stopAt != null && vid.currentTime >= st.stopAt) { vid.pause(); st.stopAt = null; } } requestAnimationFrame(tick); })();
+vid.addEventListener("pause", () => { $("play").textContent = "Play"; scheduleCurve(); });
+(function tick(now) { if (!vid.paused) { placeHead(); if (st.from === "head" && now - lastCurveAt > 120) { lastCurveAt = now; computeCurve(); } if (st.stopAt != null && vid.currentTime >= st.stopAt) { vid.pause(); st.stopAt = null; } } requestAnimationFrame(tick); })();
 
 $("addpart").onclick = () => { const t = vid.currentTime; addPart(Math.min(t, D - 5), Math.min(D, t + 10)); };
 $("limit").value = st.limitMiB; $("audio").checked = st.audio;
 $("limit").oninput = () => { const v = parseFloat($("limit").value); if (v > 0) { st.limitMiB = v; refresh(true); } };
 $("audio").onchange = () => { st.audio = $("audio").checked; refresh(true); };
-$("bar").onchange = () => { st.bar = +$("bar").value; computeFit(); };
-$("fromsel").onchange = () => { st.from = $("fromsel").value; computeFit(); };
-$("fit2part").onclick = () => { if (st.fit?.d) addPart(st.fit.a, st.fit.a + st.fit.d); };
+for (const b of $("anchor").querySelectorAll("button")) b.onclick = () => {
+  st.from = b.dataset.v; for (const o of $("anchor").querySelectorAll("button")) o.classList.toggle("on", o === b); scheduleCurve(true);
+};
 
 function split(n) {
   const p = selPart(); if (!p) return;
@@ -261,5 +316,5 @@ addEventListener("keydown", (ev) => {
   else if (ev.key === "ArrowRight") { ev.preventDefault(); seek(vid.currentTime + (ev.shiftKey ? 1 : 0.1)); }
 });
 
-new ResizeObserver(() => { buildTrack(); renderTrack(); }).observe(track);
+new ResizeObserver(() => { buildTrack(); renderTrack(); drawCurve(); }).observe(track);
 buildTrack(); refresh();

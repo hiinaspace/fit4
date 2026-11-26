@@ -46,10 +46,8 @@
       <button id="split2" title="Best 2-way split of the selected part">Split in 2</button>
       <button id="split3" title="Best 3-way split of the selected part">Split in 3</button>
       <span class="div"></span>
-      <label>How much fits at <select id="bar"><option>26</option><option selected>28</option><option>30</option><option>31</option></select> dB</label>
-      <label>from <select id="fromsel"><option value="head">playhead</option><option value="part">selected part start</option></select></label>
+      <span class="seg" id="anchor"><button data-v="head" class="on" title="Curve: quality if a part started or ended at the playhead and ran to each point">from playhead</button><button data-v="part" title="Curve: quality if the selected part started where it does and ended at each point">from part start</button></span>
       <span id="fitsout"></span>
-      <button id="fit2part" title="Make a part from the fit range">Make part from fit</button>
       <span class="sp"></span>
       <span class="legend">cheap <i class="lg c1"></i> costly content</span>
     </div>
@@ -57,9 +55,9 @@
       <div id="ruler"></div>
       <div id="film"></div>
       <canvas id="cost"></canvas>
+      <canvas id="qc"></canvas>
       <div id="lane"></div>
       <div id="bands"></div>
-      <div id="fitbar"></div>
       <div id="head"><b></b></div>
     </div>
   </section>

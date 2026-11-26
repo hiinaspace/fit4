@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fit4 · editor layout (A2)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <main id="left">
+    <div id="stage"><video id="vid" src="../data/proxy.mp4" preload="auto" playsinline></video><div id="vlabel">preview: 540p30 proxy, not the encode</div></div>
+    <div id="transport">
+      <button id="play" title="Space">Play</button>
+      <button id="playpart" title="Play the selected part, stop at its end">Play part</button>
+      <span id="clock" class="mono">0.0 / 119.7 s</span>
+      <span class="sp"></span>
+      <span class="hint" id="hint"></span>
+    </div>
+    <section id="cmdbox">
+      <div class="boxhead"><b>Commands</b><span class="sp"></span>
+        <button id="copy">Copy</button>
+        <button id="encode" disabled title="Running encodes from the GUI comes later">Encode</button></div>
+      <pre id="cmds" class="mono"></pre>
+    </section>
+  </main>
+
+  <aside id="side">
+    <section id="settings">
+      <label>Limit <input id="limit" type="number" min="0.5" step="0.5" value="4"> MiB</label>
+      <label class="chk"><input id="audio" type="checkbox"> Audio</label>
+      <span class="sp"></span>
+      <button id="addpart" title="New part at the playhead">+ Part</button>
+    </section>
+    <section id="alts">
+      <div class="boxhead"><b>Proposal</b><span id="altnote"></span><span class="sp"></span>
+        <button id="clrpins" hidden title="Forget the edges you dragged">Clear pins</button>
+        <button id="accept" title="Replace the parts with this proposal">Accept as parts</button></div>
+      <table id="alttab"><thead><tr><th>Clips</th><th>Total</th><th>Worst</th><th>Marks</th></tr></thead><tbody></tbody></table>
+      <div id="altfoot"></div>
+    </section>
+    <section id="parts"></section>
+    <section id="ladder">
+      <div class="boxhead"><b id="ladtitle">What dB looks like</b><span class="sp"></span><span id="ladnote"></span></div>
+      <div id="chips"></div>
+      <div id="tiles"><div class="tile" id="t1"></div><div class="tile" id="t2"></div></div>
+      <div class="cap"><span>rock texture</span><span>enemy</span></div>
+    </section>
+  </aside>
+
+  <section id="timeline">
+    <div id="tbar">
+      <button id="split2" title="Best 2-way split of the selected part">Split in 2</button>
+      <button id="split3" title="Best 3-way split of the selected part">Split in 3</button>
+      <span class="div"></span>
+      <span class="seg" id="anchor"><button data-v="head" class="on" title="Curve: quality if a part started or ended at the playhead and ran to each point">from playhead</button><button data-v="part" title="Curve: quality if the selected part started where it does and ended at each point">from part start</button></span>
+      <span id="fitsout"></span>
+      <span class="sp"></span>
+      <button id="undo" hidden title="Ctrl+Z">Undo</button>
+      <button id="clrmarks" hidden>Clear marks</button>
+      <button id="demo">Demo marks</button>
+      <span class="div"></span>
+      <span class="legend"><i class="lgm moment"></i>moment <i class="lgm keep"></i>keep <i class="lgm boring"></i>boring</span>
+    </div>
+    <div id="track">
+      <div id="ruler"></div>
+      <div id="film"></div>
+      <canvas id="aud"></canvas>
+      <canvas id="cost"></canvas>
+      <canvas id="qc"></canvas>
+      <div id="mband"></div>
+      <div id="pband"></div>
+      <div id="bands"></div>
+      <div id="mlane"></div>
+      <div id="plane"></div>
+      <div id="lane"></div>
+      <span class="tag" style="top:64px">audio</span>
+      <span class="tag" style="top:96px">cost</span>
+      <span class="tag" style="top:208px">marks</span>
+      <span class="tag" style="top:240px">proposal</span>
+      <span class="tag" style="top:272px">parts</span>
+      <div id="head"><b></b></div>
+    </div>
+  </section>
+</div>
+<div id="pop" hidden></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -52,3 +52,19 @@ def test_pick_frames_one_per_window():
     vals = [5.0] * 30
     vals[3], vals[14], vals[29] = 1.0, 2.0, 0.5
     assert pick_frames(vals) == [3, 14, 29]
+
+
+def test_trim_window():
+    import pytest
+
+    from fit4.cli import parse_time
+    from fit4.probe import BadInput, trim
+
+    assert parse_time("1:30.5") == 90.5 and parse_time("51") == 51
+    t = trim(BASE, 0, duration=min(5.0, BASE.duration / 2))
+    assert t.trimmed and t.in_args[:2] == ["-ss", "0.000"]
+    assert trim(BASE) is BASE
+    with pytest.raises(BadInput):
+        trim(BASE, BASE.duration + 1)
+    with pytest.raises(BadInput):
+        trim(BASE, 0, duration=1, end=2)

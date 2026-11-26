@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fractions import Fraction
 from pathlib import Path
 
@@ -30,6 +30,15 @@ class Source:
     video_codec: str = ""  # ffprobe codec_name, e.g. "h264"
     audio_codec: str = ""  # "" when there is no audio
     audio_channels: int = 0
+    start: float = 0.0  # trim: seconds skipped at the front (duration is already the trimmed length)
+    trimmed: bool = False
+
+    @property
+    def in_args(self) -> list[str]:
+        """Input-side seek/limit options; put before `-i <path>`."""
+        if not self.trimmed:
+            return []
+        return ["-ss", f"{self.start:.3f}", "-t", f"{self.duration:.3f}"]
 
     @property
     def in_matrix(self) -> str:
@@ -88,6 +97,26 @@ def from_ffprobe(path: Path, info: dict) -> Source:
         video_codec=video.get("codec_name", ""),
         audio_codec=audios[0].get("codec_name", "") if audios else "",
         audio_channels=int(audios[0].get("channels") or 2) if audios else 0,
+    )
+
+
+def trim(src: Source, start: float = 0.0, duration: float | None = None, end: float | None = None) -> Source:
+    """A Source covering only [start, start+duration) (or [start, end)) of the file."""
+    if duration is not None and end is not None:
+        raise BadInput("use --duration or --end, not both")
+    if start < 0 or (duration is not None and duration <= 0) or (end is not None and end <= 0):
+        raise BadInput("trim times must be positive")
+    if start == 0 and duration is None and end is None:
+        return src
+    if start >= src.duration:
+        raise BadInput(f"--start {start:g}s is past the end of the {src.duration:.1f}s source")
+    stop = start + duration if duration is not None else end if end is not None else src.duration
+    stop = min(stop, src.duration)
+    if stop <= start:
+        raise BadInput(f"--end {stop:g}s is not after --start {start:g}s")
+    length = stop - start
+    return replace(
+        src, start=start, duration=length, nb_frames=max(2, round(length * float(src.fps))), trimmed=True
     )
 
 

@@ -130,7 +130,7 @@ def encode_once(
     )
     vargs = codec_args(cand, src, kbps, final, threads)
     log = out.with_suffix(".2pass")
-    base = [*ff.FFMPEG, "-v", "error", "-y", "-i", str(src.path), "-vf", vf, *vargs, *COLOR_TAGS]
+    base = [*ff.FFMPEG, "-v", "error", "-y", *src.in_args, "-i", str(src.path), "-vf", vf, *vargs, *COLOR_TAGS]
     ff.run([*base, "-an", "-pass", "1", "-passlogfile", str(log), "-f", "null", "-"])
     mux = ["-movflags", "+faststart"] if cand.codec == "x264" else []
     ff.run([*base, *audio_args(cand, src, audio), "-pass", "2", "-passlogfile", str(log), *mux, str(out)])

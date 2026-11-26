@@ -27,6 +27,7 @@ stdout; progress goes to stderr.
 fit4 clip.mp4 --limit 10MB          # any limit: bytes, or B/KB/KiB/MB/MiB
 fit4 clip.mp4 -o out.webm           # the suffix picks the codec (.mp4 = x264, .webm = VP9)
 fit4 clip.mp4 --no-audio            # drop audio and give its bits to the video
+fit4 clip.mp4 --duration 51         # only the first 51 s (also --start 1:30, --end 2:00)
 fit4 --help
 ```
 

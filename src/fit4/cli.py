@@ -14,7 +14,7 @@ from pathlib import Path
 from . import ff, report
 from .boards import BOARDS, Board
 from .encode import EXT, Candidate, budget_kbps
-from .probe import BadInput, Source, probe
+from .probe import BadInput, Source, probe, trim
 from .search import grid, pick_finalists, run_trials
 
 # Exit codes (also in --help and the README).
@@ -71,6 +71,20 @@ parse_scales = _csv(float, lambda s: 0 < s <= 1, "height scales in (0, 1]")
 parse_divs = _csv(int, lambda d: d >= 1, "whole framerate divisors >= 1")
 
 
+def parse_time(text: str) -> float:
+    """Seconds, M:SS or H:MM:SS (fractions allowed)."""
+    try:
+        parts = [float(p) for p in text.split(":")]
+    except ValueError:
+        parts = []
+    if not 1 <= len(parts) <= 3 or any(p < 0 for p in parts):
+        raise argparse.ArgumentTypeError(f"{text!r}: want seconds, M:SS or H:MM:SS")
+    secs = 0.0
+    for p in parts:
+        secs = secs * 60 + p
+    return secs
+
+
 def positive(text: str) -> int:
     try:
         n = int(text)
@@ -122,6 +136,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--finals", type=positive, default=2, help="slow-preset encodes of the leaders (default: %(default)s)"
     )
     ap.add_argument("--jobs", type=positive, default=4, help="encodes run at once; CPU threads are split between them")
+    ap.add_argument("--start", type=parse_time, default=0.0, help="trim: start here (seconds, M:SS or H:MM:SS)")
+    ap.add_argument("--duration", type=parse_time, help="trim: encode only this much from --start (e.g. 51)")
+    ap.add_argument("--end", type=parse_time, help="trim: stop here instead of using --duration")
     ap.add_argument("--no-audio", action="store_true", help="drop the audio track (frees its bits for video)")
     ap.add_argument("--force", action="store_true", help="re-encode even if the source already fits")
     ap.add_argument("--work", type=Path, help="work and report directory; default <input>.fit4.d next to the input")
@@ -168,18 +185,18 @@ def run(args: argparse.Namespace) -> int:
     if not args.input.is_file():
         raise BadInput(f"{args.input}: no such file")
     ff.require_binaries()
-    src = probe(args.input)
+    src = trim(probe(args.input), args.start, args.duration, args.end)
     log(
         f"{src.path.name}: {src.width}x{src.height} {float(src.fps):g}fps {src.duration:.1f}s "
-        f"{src.size / 1e6:.1f}MB{' +audio' if src.has_audio else ''}; limit {limit:,} B "
+        f"{f'(trimmed from {src.start:g}s) ' if src.trimmed else ''}{src.size / 1e6:.1f}MB{' +audio' if src.has_audio else ''}; limit {limit:,} B "
         f"→ {limit * 8 / src.duration / 1000:.0f} kbps total"
     )
-    if already_fits(src, board, limit, audio) and not args.force:
+    if not src.trimmed and already_fits(src, board, limit, audio) and not args.force:
         log(
             f"{src.path.name} already fits ({src.size:,} B) in an uploadable format; nothing to do (--force re-encodes)"
         )
         return OK
-    if src.size <= limit:
+    if not src.trimmed and src.size <= limit:
         log("note: the source is under the limit, but its format or dimensions need a re-encode")
     if board.max_duration and src.duration > board.max_duration:
         log(f"warning: {src.duration:.0f}s exceeds {board.name}'s reported {board.max_duration:.0f}s max")

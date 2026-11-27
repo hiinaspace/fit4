@@ -56,3 +56,51 @@ The re-measured XPSNR matched fit4's own printed figure to 0.01 dB on all four w
 8. Re-run this gate on the held-out windows only after fixes 1 and 2. Expect w3's time to rise somewhat; there is about 70 s of headroom under the 40% budget (462 s allowed, 394 s used).
 
 Raw run records (JSON, logs, delivered files) are in the verifier's session scratchpad under `v/`, which is not kept.
+
+# Second verification, after the repair round (commit 571933a)
+
+Verdict: **PASS.** On all three held-out windows the delivered file is under 4 MiB and within 0.3 dB of the oracle winner (w3 now matches it: 57.68 dB, the same candidate). Held-out wall time is 416.6 s against the oracle's 1155.7 s, **36.0%** (the gate allows 40%).
+
+Not checked: nobody watched the clips; each window ran once; the progress bars were not seen on a terminal (my runs captured stderr to a file, where rich draws nothing). w3 is no longer a clean held-out test: the first verdict described its failure in detail, and the repair (the frame-rate hedge) was written knowing it.
+
+## Table
+
+Each run was `fit4 <local copy of source> --start S --duration D --no-audio --work <dir>` with no other flags, one window per hold of `flock /tmp/fit4-heavy.lock local-job --` (the libvpx benchmark job shared the lock; waits are not counted). Wall time runs from the start of the command inside the lock to its exit, probe included. XPSNR was re-measured on the delivered file with `fit4.metrics.score` (ssim on, the oracle's filter graph) against `trim(probe(src), start, duration)`, at source size and frame rate (frame counts 1200 / 1440 / 959 / 1560 = source frames).
+
+| window | split | oracle winner | oracle dB | oracle s | new winner | new dB (re-measured) | new s | delivered bytes | under 4,194,304 | dB vs oracle | pass |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| w1-mechvr | heldout | vp9-1080p60 | 37.10 | 386.2 | vp9-1080p60 | 37.154 | 205.8 | 4,160,131 | yes | +0.05 | yes |
+| w2-dragonfist | heldout | vp9-720p60 | 30.23 | 630.2 | vp9-720p60 | 30.260 | 131.7 | 4,178,674 | yes | +0.03 | yes |
+| w3-ardour | heldout | vp9-720p30.0002 | 57.68 | 139.3 | vp9-720p30.0002 | 57.677 | 79.2 | 4,176,220 | yes | -0.00 | yes |
+| w4-quake | tune (control) | vp9-900p60 | 32.00 | 749.2 | vp9-900p60 | 32.055 | 206.5 | 4,185,179 | yes | +0.06 | (control) |
+
+Held-out total 416.6 s of 1155.7 s = 36.0% (limit 462.3 s). w1, w2 and w4 delivered byte-identical files to the first verification; w3 changed (3,308,964 B at 53.12 dB before). Output geometry as labelled (w3 1280x720 at 30 fps).
+
+## How w3 was won
+
+The probe still ranks it wrong. With the cap, vp9-720p60 is predicted 58.27 dB "(at ceiling)" and vp9-720p30 53.16; measured they are 53.35 and 57.68. Pruning kept the best of each frame rate because the leader was capped, and `hedge_finals` added vp9-720p30 as a second final, where `pick_by_prediction` alone (0.5 dB margin) would have dropped it. The real finals chose. The extra size rounds also worked: both finals reached the 97-100% band in 4 rounds (12 encodes, 79 s). So on easy content the safety comes from the hedge, not from the prediction; a clip where the winner is a lower-height 30 fps candidate (not the best-ranked 30 fps one) would still be missed. Odd but harmless: vp9-600p60/600p30 were predicted 35.6 dB "at ceiling" next to 58 for 720p.
+
+## Diff review (repair commit, on top of the first review)
+
+- **Size limit:** unchanged paths; extra rounds only add tries, and the chosen file is still the largest result at or under the limit.
+- **Finals:** still real 2-pass size-fitted encodes. The fallback for `--screen none` is now reachable (the `RuntimeError` is caught, the rest of the grid is screened, then finals).
+- **Metric:** unchanged from the first review; same code as the oracle's baseline worktree except the probe-only `ssim=False` option.
+- **Held-out leakage:** no held-out id, path or oracle figure in `src`, `tests`, `scripts` or `sketches`. `EXTRAP_MAX_DB` cites w6 (tune), the `FIRST_ROUND` comment now cites tune-only data, `VP9_FLOOR` stayed 2.0 with tune evidence, and `eval/new-fix` holds only w4 and w6. The design of the hedge was informed by the first verdict's w3 description (see "Not checked").
+- **Stats-file reuse:** unchanged; key includes geometry.
+- **Preflight JSON / GUI:** schema unchanged; `prune.json` gained a `ceiling` field. `predict.js` now matches Python (`VP9_FLOOR = 2.0`, the 0.5 dB cap, `atCeiling`), so the GUI's predictions change: VP9 geometries between 1.6x and 2.0x of the CRF-63 bitrate now show as infeasible, and easy clips stop showing extrapolated figures. Merging into gui-sketches is clean (`git merge-tree`). The comment above the floor check in `preflight.predict` still says "~1.6x".
+- **Tests and lint:** `uv run pytest` 95 passed (45.6 s, under the lock). `ruff check src tests scripts` clean; `ruff format --check` wants to reformat `scripts/measure_cpuused.py`; `ty check src tests scripts` clean. Whole-repo `ruff check` still has 59 errors and `ty check` 1 (all in `eval/`, PIL in `eval/sheet.py`), which the pre-commit hooks will hit if they run on those files.
+
+## What S would notice running it by hand
+
+- Log is shorter: survivors only plus "N ruled out (reasons in .../prune.json)". On easy clips every survivor says "(at ceiling)" and a predicted figure that can be 5 dB off, which reads as more confident than it is.
+- Frame-rate labels like `vp9-720p30.0002` / `720p60.0004` for a 60.0004 fps source (pre-existing).
+- The header says "+audio" with `--no-audio` (it describes the source; pre-existing).
+- Defaults changed from the old sweep, as in the first review: probe always runs (clips of 10 s or more), `--screen none`, `--jobs` from the CPU budget, finals band 97-100%, plus now up to two extra final rounds and a hedge final on easy clips.
+
+## Minor fix list (not gate items)
+
+1. Run `ruff format` on `scripts/measure_cpuused.py`; exclude `eval/` from ruff/ty or fix it.
+2. Update the "~1.6x" comment in `preflight.predict`.
+3. Consider printing "at ceiling (capped guess)" figures differently, or not ranking on them, since the hedge is what saves easy clips.
+
+Raw run records are in the verifier's session scratchpad under `v/runs/`, which is not kept.

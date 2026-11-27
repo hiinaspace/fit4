@@ -3,7 +3,7 @@
 # Runs fit4 new default pipeline on the windows one after another; a failing window leaves ID.error.json and the shard carries on.
 here=$(cd "$(dirname "$0")" && pwd)
 shard=$1; shift
-out=/videos-out/cluster-fast
+out=/videos-out/cluster-fast2
 ok=0; bad=0
 for id in $(grep -v '^#' "$shard"); do
   echo "=== $id $(date -u +%FT%TZ)"

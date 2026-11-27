@@ -171,6 +171,14 @@ def build_parser() -> argparse.ArgumentParser:
         "dB of the best (default: %(default)s)",
     )
     ap.add_argument(
+        "--cross-margin",
+        type=float,
+        default=CROSS_CHECK_DB,
+        metavar="DB",
+        help="when a VP9 final leads, screen x264 at the same height and frame rate and give it a final too if its "
+        "screening score is within this many dB of the VP9 final (negative: off; default: %(default)s)",
+    )
+    ap.add_argument(
         "--jobs",
         type=positive,
         help="most encodes at once (default: as many as the CPU budget allows; with --flat-layout, 4)",
@@ -274,6 +282,39 @@ def run_final_stage(src, fin, limit, work, budget, audio, cache):
     if not finals:
         raise RuntimeError("no final encode got under the size limit; try a larger --limit or a shorter clip")
     return finals
+
+
+CROSS_CHECK_DB = 0.5  # x264's slow final gains 0.0-1.7 dB over its screening encode, VP9's about 0
+
+
+def cross_check_x264(src, finals, cands, limit, work, layout, audio, cache, margin):
+    """The probe cannot rank x264 against VP9 at one geometry within a dB (x264's slow final gains far more over
+    its fast encode than VP9's does), so when a VP9 final leads, measure x264 at that height and frame rate:
+    one screening encode, and a final only if the screening score is within `margin` dB of the VP9 final."""
+    lead = max(finals, key=lambda t: t.score.primary)
+    if lead.cand.codec != "vp9" or margin < 0:
+        return finals
+    twin = [
+        c for c in cands
+        if c.codec == "x264" and c.height == lead.cand.height and abs(float(c.fps) - float(lead.cand.fps)) < 1e-3
+    ]  # fmt: skip
+    if not twin or any(t.cand == twin[0] for t in finals):
+        return finals
+    try:
+        scr = run_stage("cross-check", src, twin, limit, work, final=False, layout=layout, audio=audio, cache=cache)
+    except RuntimeError:
+        return finals
+    if not scr:
+        return finals
+    gap = scr[0].score.primary - lead.score.primary
+    scr[0].enc.path.unlink(missing_ok=True)
+    log(f"cross-check: {twin[0].label()} screens {gap:+.2f} dB against {lead.cand.label()}'s final")
+    if gap < -margin:
+        return finals
+    try:
+        return [*finals, *run_final_stage(src, twin, limit, work, layout.budget, audio, cache)]
+    except RuntimeError:
+        return finals
 
 
 def run_onepass_stage(src, cands, limit, work, pf, **kw):
@@ -471,6 +512,8 @@ def run(args: argparse.Namespace) -> int:
             )
             fin = pick_finalists(screen, args.finals)
             finals = run_final_stage(src, fin, limit, work, layout.budget, audio, cache)
+        if pf is not None and "x264" in codecs and "vp9" in codecs:
+            finals = cross_check_x264(src, finals, cands + skipped, limit, work, layout, audio, cache, args.cross_margin)
     finally:
         log(f"first passes: {cache.runs} run, {cache.hits} reused")
         cache.clear()

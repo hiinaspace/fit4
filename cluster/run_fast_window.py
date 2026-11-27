@@ -67,7 +67,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("id")
     ap.add_argument("--windows", type=Path, default=HERE / "windows.json")
-    ap.add_argument("--out", type=Path, default=Path("/videos-out/cluster-fast"))
+    ap.add_argument("--out", type=Path, default=Path("/videos-out/cluster-fast2"))
     ap.add_argument("--scratch", type=Path, default=Path(os.environ.get("FIT4_SCRATCH", "/w/scratch")))
     ap.add_argument("--timeout", type=float, default=3 * 3600)
     a = ap.parse_args()

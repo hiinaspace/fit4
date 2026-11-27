@@ -1,0 +1,354 @@
+{
+ "window": {
+  "id": "w6-ui",
+  "path": "/mnt/pool/videos/2026-10-11 13-58-14.mp4",
+  "start": 10,
+  "duration": 30,
+  "split": "tune",
+  "kind": "screencast / UI-heavy",
+  "description": "Browser mech-model viewer, 1080p60, light page with a rotating low-poly model and dense small UI panel"
+ },
+ "args": [
+  "--screen",
+  "none"
+ ],
+ "exit": 0,
+ "locked_wall_s": 187.5,
+ "waited_for_lock_s": 263.8,
+ "stdout": "/tmp/claude-1000/sc/local/w6-ui.src.fit4.webm",
+ "results": [
+  {
+   "stage": "final",
+   "label": "vp9-1080p60",
+   "bytes": 4163285,
+   "kbps": 1117.0,
+   "xpsnr_yuv": 51.133,
+   "xpsnr_y": 49.3,
+   "ssim_y": 0.99884,
+   "seconds": 261.8,
+   "attempts": [
+    [
+     1095.1330523525514,
+     4077642
+    ],
+    [
+     1117.0357133996024,
+     4163285
+    ]
+   ],
+   "floor_fix": false,
+   "rank_db": null
+  },
+  {
+   "stage": "final",
+   "label": "vp9-900p60",
+   "bytes": 4134034,
+   "kbps": 1117.0,
+   "xpsnr_yuv": 37.651,
+   "xpsnr_y": 30.836,
+   "ssim_y": 0.97454,
+   "seconds": 187.8,
+   "attempts": [
+    [
+     1095.1330523525514,
+     4050215
+    ],
+    [
+     1117.0357133996024,
+     4134034
+    ]
+   ],
+   "floor_fix": false,
+   "rank_db": null
+  }
+ ],
+ "probe": {
+  "start": 10.0,
+  "duration": 30.0,
+  "src_fps": 60.0,
+  "timeline": [
+   764.1864406779661,
+   28.5,
+   70.05,
+   140.45,
+   147.63333333333333,
+   137.08333333333334,
+   206.85,
+   157.68333333333334,
+   147.51666666666668,
+   155.18333333333334,
+   25.466666666666665,
+   237.23333333333332,
+   405.55,
+   188.3,
+   79.7,
+   132.55,
+   112.73333333333333,
+   300.8833333333333,
+   343.5,
+   368.43333333333334,
+   236.77966101694915,
+   145.71666666666667,
+   276.73333333333335,
+   211.96666666666667,
+   187.5,
+   184.76666666666668,
+   197.31666666666666,
+   49.11666666666667,
+   44.016666666666666,
+   266.18333333333334
+  ],
+  "reel_complexity": 191.07777777777778,
+  "slices": [
+   [
+    16.5,
+    2.0
+   ],
+   [
+    31.5,
+    2.0
+   ]
+  ],
+  "curves": [
+   {
+    "codec": "vp9",
+    "height": 1080,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 30,
+      "key_bytes": 83515.0,
+      "inter_bytes": 2504.874476987448,
+      "xpsnr": 49.20493333333334,
+      "ssim": 0.0
+     },
+     {
+      "crf": 38,
+      "key_bytes": 64124.0,
+      "inter_bytes": 1457.0251046025105,
+      "xpsnr": 46.27288333333333,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 21853.0,
+      "inter_bytes": 287.4309623430962,
+      "xpsnr": 34.50653333333333,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 900,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 27,
+      "key_bytes": 73741.0,
+      "inter_bytes": 2250.3430962343095,
+      "xpsnr": 37.38663333333333,
+      "ssim": 0.0
+     },
+     {
+      "crf": 35,
+      "key_bytes": 57228.0,
+      "inter_bytes": 1315.7740585774059,
+      "xpsnr": 36.90173333333333,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 15897.0,
+      "inter_bytes": 230.69874476987448,
+      "xpsnr": 31.029216666666667,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 720,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 23,
+      "key_bytes": 61857.0,
+      "inter_bytes": 2206.351464435146,
+      "xpsnr": 34.624316666666665,
+      "ssim": 0.0
+     },
+     {
+      "crf": 31,
+      "key_bytes": 48655.0,
+      "inter_bytes": 1328.020920502092,
+      "xpsnr": 34.28438333333333,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 11024.0,
+      "inter_bytes": 176.00836820083683,
+      "xpsnr": 28.75876666666667,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 540,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 18,
+      "key_bytes": 45311.0,
+      "inter_bytes": 1874.234309623431,
+      "xpsnr": 30.518066666666666,
+      "ssim": 0.0
+     },
+     {
+      "crf": 26,
+      "key_bytes": 37766.0,
+      "inter_bytes": 1229.3012552301254,
+      "xpsnr": 30.376416666666668,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 6439.0,
+      "inter_bytes": 126.5397489539749,
+      "xpsnr": 26.309433333333335,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "x264",
+    "height": 900,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 15,
+      "key_bytes": 74896.0,
+      "inter_bytes": 2685.8828451882846,
+      "xpsnr": 37.62643333333333,
+      "ssim": 0.0
+     },
+     {
+      "crf": 23,
+      "key_bytes": 44773.0,
+      "inter_bytes": 1127.7322175732218,
+      "xpsnr": 36.87035,
+      "ssim": 0.0
+     },
+     {
+      "crf": 32,
+      "key_bytes": 23796.0,
+      "inter_bytes": 542.9623430962343,
+      "xpsnr": 34.68951666666666,
+      "ssim": 0.0
+     }
+    ]
+   }
+  ]
+ },
+ "prune": [
+  {
+   "label": "x264-1080p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 11.1 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-1080p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-900p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 37.62325289015486
+  },
+  {
+   "label": "x264-900p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-720p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 11.1 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-720p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-540p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 11.1 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-540p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "vp9-1080p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 48.68797086499893
+  },
+  {
+   "label": "vp9-1080p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 47.8 dB, so about 46.6 dB at best against 48.7 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-900p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 37.73296880263314
+  },
+  {
+   "label": "vp9-900p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 47.8 dB, so about 37.9 dB at best against 48.7 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-720p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 35.00161115649164
+  },
+  {
+   "label": "vp9-720p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 47.8 dB, so about 35.2 dB at best against 48.7 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-540p60",
+   "keep": false,
+   "reason": "17.72 dB behind the predicted best (margin 1.5)",
+   "predicted": 30.963845939822612
+  },
+  {
+   "label": "vp9-540p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 47.8 dB, so about 31.1 dB at best against 48.7 for full-rate VP9",
+   "predicted": null
+  }
+ ],
+ "delivered_bytes": 4163285
+}

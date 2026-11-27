@@ -19,7 +19,7 @@ from .boards import BOARDS, Board
 from .encode import EXT, FLOOR_FIX, Candidate, FirstPassCache, budget_kbps
 from .layout import available_cpus, plan_layout
 from .probe import BadInput, Source, probe, trim
-from .search import Trial, grid, pick_finalists, run_finals, run_onepass, run_trials
+from .search import Trial, grid, pick_by_prediction, pick_finalists, run_finals, run_onepass, run_trials
 
 # Exit codes (also in --help and the README).
 OK, FAILED, USAGE, NO_FFMPEG, INTERRUPTED = 0, 1, 2, 3, 130
@@ -32,7 +32,7 @@ FINAL_LOW = 0.97
 FINAL_ROUNDS = 3
 
 SCREEN_MODES = ("2pass", "crf", "none")
-DEFAULT_SCREEN = "2pass"
+DEFAULT_SCREEN = "none"
 
 EPILOG = """\
 examples:
@@ -153,6 +153,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--finals", type=positive, default=2, help="slow-preset encodes of the leaders (default: %(default)s)"
+    )
+    ap.add_argument(
+        "--finals-margin",
+        type=float,
+        default=0.5,
+        metavar="DB",
+        help="with --screen none or crf, a second final (up to --finals) only when it is predicted within this many "
+        "dB of the best (default: %(default)s)",
     )
     ap.add_argument(
         "--jobs",
@@ -392,7 +400,8 @@ def run(args: argparse.Namespace) -> int:
     try:
         if mode == "none":
             # The probe's prediction ranks the survivors; only its top --finals are encoded.
-            fin = sorted(cands, key=lambda c: pred.get(c.label(), -1e9), reverse=True)[: args.finals]
+            ranked = sorted(((c, pred[c.label()]) for c in cands if c.label() in pred), key=lambda t: -t[1])
+            fin = pick_by_prediction(ranked, args.finals, args.finals_margin) or cands[: args.finals]
             log(f"no screening: final encodes of the probe's top {len(fin)}: {', '.join(c.label() for c in fin)}")
         else:
             log(f"screening {len(cands)} candidates ({mode}; {layout.describe()})")
@@ -410,7 +419,11 @@ def run(args: argparse.Namespace) -> int:
                 screen = run_stage(
                     "screening", src, skipped, limit, work, final=False, layout=layout, audio=audio, cache=cache
                 )
-            fin = pick_finalists(screen, args.finals)
+            if mode == "crf":
+                ranked = sorted(((t.cand, t.key) for t in screen), key=lambda t: -t[1])
+                fin = pick_by_prediction(ranked, args.finals, args.finals_margin)
+            else:
+                fin = pick_finalists(screen, args.finals)
             log(f"final encodes: {', '.join(c.label() for c in fin)}")
         finals = run_final_stage(src, fin, limit, work, layout.budget, audio, cache)
         if not finals and mode == "none":

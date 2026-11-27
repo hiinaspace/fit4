@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
@@ -268,7 +269,7 @@ def run_finals(
                 continue
             todo[c] = next_rates(pts, limit, low, 2)
         log(f"  final round {rnd + 1}: {len(jobs)} encodes, {len(done)}/{len(cands)} candidates in the band")
-    trials = []
+    chosen: list[tuple[Candidate, float, int, Path]] = []
     for c in cands:
         fit = [r for r in results[c] if r[1] <= limit]
         if not fit:
@@ -280,11 +281,30 @@ def run_finals(
         p.rename(out)
         for _, _, q in results[c]:
             q.unlink(missing_ok=True)
+        chosen.append((c, k, sz, out))
+    if not chosen:
+        return []
+    with ThreadPoolExecutor(len(chosen)) as ex:  # scoring is single-threaded filter work: do the finalists at once
+        scores = list(ex.map(lambda t: score(src, t[3], t[3].with_suffix(".xpsnr.txt")), chosen))
+    trials = []
+    for (c, k, sz, out), sc in zip(chosen, scores):
         enc = EncodeResult(c, out, k, sz, secs[c], [(kk, ss) for kk, ss, _ in results[c]])
-        sc = score(src, out, out.with_suffix(".xpsnr.txt"))
         log(
-            f"  {c.label():<18} {sz / 1e6:6.3f} MB  {k:5.0f} kbps  XPSNR {sc.xpsnr_yuv:6.3f}  SSIM {sc.ssim_y:.4f}  ({len(results[c])} encodes)"
+            f"  {c.label():<18} {sz / 1e6:6.3f} MB  {k:5.0f} kbps  XPSNR {sc.xpsnr_yuv:6.3f}  "
+            f"SSIM {sc.ssim_y:.4f}  ({len(results[c])} encodes)"
         )
         on_done()
         trials.append(Trial(enc, sc))
     return trials
+
+
+def pick_by_prediction(ranked: list[tuple[Candidate, float]], n: int, margin: float) -> list[Candidate]:
+    """The best-ranked candidate, plus up to n-1 more whose score is within `margin` dB of it.
+
+    `ranked` is (candidate, predicted or adjusted dB), best first. Two candidates a fraction of a dB
+    apart are not reliably ordered by a prediction, so both get a final; one that is clearly behind does not.
+    """
+    if not ranked:
+        return []
+    top = ranked[0][1]
+    return [c for c, q in ranked[:n] if q >= top - margin or c == ranked[0][0]]

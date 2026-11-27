@@ -1,0 +1,338 @@
+{
+ "window": {
+  "id": "w7-flat",
+  "path": "/mnt/pool/videos/2026-09-14 21-21-34.mp4",
+  "start": 40,
+  "duration": 14,
+  "split": "tune",
+  "kind": "flat-shaded low-poly (nearest to 2D)",
+  "description": "Flat-shaded low-poly space station in VR, odd 1908x2162 portrait capture, 60 fps, large uniform colour areas and thin neon edges"
+ },
+ "args": [
+  "--screen",
+  "none"
+ ],
+ "exit": 0,
+ "locked_wall_s": 253.6,
+ "waited_for_lock_s": 119.9,
+ "stdout": "/tmp/claude-1000/sc/local/w7-flat.src.fit4.webm",
+ "results": [
+  {
+   "stage": "final",
+   "label": "vp9-2048p60",
+   "bytes": 4127528,
+   "kbps": 2346.7,
+   "xpsnr_yuv": 36.027,
+   "xpsnr_y": 34.009,
+   "ssim_y": 0.97629,
+   "seconds": 310.3,
+   "attempts": [
+    [
+     2346.71368361261,
+     4127528
+    ],
+    [
+     2393.6479572848625,
+     4207800
+    ]
+   ],
+   "floor_fix": false,
+   "rank_db": null
+  },
+  {
+   "stage": "final",
+   "label": "vp9-1800p60",
+   "bytes": 4118444,
+   "kbps": 2346.7,
+   "xpsnr_yuv": 35.724,
+   "xpsnr_y": 33.533,
+   "ssim_y": 0.97595,
+   "seconds": 260.7,
+   "attempts": [
+    [
+     2346.71368361261,
+     4118444
+    ],
+    [
+     2393.6479572848625,
+     4197349
+    ]
+   ],
+   "floor_fix": false,
+   "rank_db": null
+  }
+ ],
+ "probe": {
+  "start": 40.0,
+  "duration": 14.0,
+  "src_fps": 60.0,
+  "timeline": [
+   776.0508474576271,
+   1097.0166666666667,
+   1077.6833333333334,
+   674.7166666666667,
+   920.3666666666667,
+   1084.8833333333334,
+   1156.7833333333333,
+   985.15,
+   812.4333333333333,
+   691.8166666666667,
+   877.5166666666667,
+   918.95,
+   850.6166666666667,
+   1024.0166666666667
+  ],
+  "reel_complexity": 860.1750000000001,
+  "slices": [
+   [
+    42.5,
+    2.0
+   ],
+   [
+    49.5,
+    2.0
+   ]
+  ],
+  "curves": [
+   {
+    "codec": "vp9",
+    "height": 2048,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 45,
+      "key_bytes": 62636.0,
+      "inter_bytes": 11596.702928870292,
+      "xpsnr": 38.12833333333334,
+      "ssim": 0.0
+     },
+     {
+      "crf": 53,
+      "key_bytes": 40728.0,
+      "inter_bytes": 5781.652719665272,
+      "xpsnr": 36.276266666666665,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 21851.0,
+      "inter_bytes": 1799.121338912134,
+      "xpsnr": 33.282450000000004,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 1800,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 42,
+      "key_bytes": 63613.0,
+      "inter_bytes": 12154.351464435147,
+      "xpsnr": 37.71715,
+      "ssim": 0.0
+     },
+     {
+      "crf": 50,
+      "key_bytes": 41551.0,
+      "inter_bytes": 6051.104602510461,
+      "xpsnr": 36.0531,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 19246.0,
+      "inter_bytes": 1508.937238493724,
+      "xpsnr": 32.75161666666666,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 1442,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 38,
+      "key_bytes": 59667.0,
+      "inter_bytes": 12213.619246861925,
+      "xpsnr": 36.86456666666667,
+      "ssim": 0.0
+     },
+     {
+      "crf": 46,
+      "key_bytes": 39877.0,
+      "inter_bytes": 6062.669456066946,
+      "xpsnr": 35.47821666666667,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 15338.0,
+      "inter_bytes": 1140.958158995816,
+      "xpsnr": 31.870400000000004,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 1080,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 32,
+      "key_bytes": 55817.0,
+      "inter_bytes": 12520.874476987448,
+      "xpsnr": 36.140883333333335,
+      "ssim": 0.0
+     },
+     {
+      "crf": 40,
+      "key_bytes": 37992.0,
+      "inter_bytes": 6387.401673640167,
+      "xpsnr": 35.039566666666666,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 10973.0,
+      "inter_bytes": 763.8075313807532,
+      "xpsnr": 30.6544,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "x264",
+    "height": 1800,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 31,
+      "key_bytes": 40593.0,
+      "inter_bytes": 7032.806722689075,
+      "xpsnr": 36.71391666666667,
+      "ssim": 0.0
+     },
+     {
+      "crf": 32,
+      "key_bytes": 36933.0,
+      "inter_bytes": 6277.382352941177,
+      "xpsnr": 36.25268333333333,
+      "ssim": 0.0
+     },
+     {
+      "crf": 39,
+      "key_bytes": 20290.5,
+      "inter_bytes": 3335.5126050420167,
+      "xpsnr": 32.731966666666665,
+      "ssim": 0.0
+     }
+    ]
+   }
+  ]
+ },
+ "prune": [
+  {
+   "label": "x264-2048p60",
+   "keep": false,
+   "reason": "x264 pilot (1800p) is 1.4 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-2048p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-1800p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 34.62424266499721
+  },
+  {
+   "label": "x264-1800p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-1442p60",
+   "keep": false,
+   "reason": "x264 pilot (1800p) is 1.4 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-1442p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-1080p60",
+   "keep": false,
+   "reason": "x264 pilot (1800p) is 1.4 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-1080p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "vp9-2048p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 36.038573588211285
+  },
+  {
+   "label": "vp9-2048p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 33.3 dB, so about 32.0 dB at best against 36.0 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-1800p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 35.75376696943608
+  },
+  {
+   "label": "vp9-1800p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 33.3 dB, so about 31.9 dB at best against 36.0 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-1442p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 35.239463899281404
+  },
+  {
+   "label": "vp9-1442p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 33.3 dB, so about 31.7 dB at best against 36.0 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-1080p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 34.7223759713634
+  },
+  {
+   "label": "vp9-1080p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 33.3 dB, so about 31.4 dB at best against 36.0 for full-rate VP9",
+   "predicted": null
+  }
+ ],
+ "delivered_bytes": 4127528
+}

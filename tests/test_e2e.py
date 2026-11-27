@@ -80,7 +80,7 @@ def test_probe_prunes_and_writes_its_decisions(tmp_path, capsys):
     limit = 150_000
     rc = cli.main(
         [str(clip), "--limit", str(limit), "--scales", "1,0.5", "--fps-divs", "1", "--finals", "1",
-         "--prune-keep", "1", "--prune-margin", "0"]
+         "--prune-keep", "1", "--prune-margin", "0", "--screen", "2pass"]
     )  # fmt: skip
     err = capsys.readouterr().err
     assert rc == 0, err

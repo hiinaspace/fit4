@@ -33,3 +33,10 @@ Clips are 30 s excerpts of local gameplay captures (A30 1080p60 game footage, B3
 - **x264 reuse tolerance** (+-15%) from two data points. Offsets (x264 0.2, vp9 0.4) come from one clip; check on B30 and C30.
 - Optional `widen(layout, counts)` to give x264 finals more threads when few jobs are in flight.
 - `ruff check` on the whole repo fails on the other agent's `eval/`; use `src tests scripts`.
+
+## Sweep-strategy round (builder 2)
+
+- Probe is staged (VP9 CRF-63 refs, 2 bracket CRFs for feasible geometries, x264 only if a pilot is within 0.5 dB, 30 fps only if the judder estimate can reach the best). 157 s -> 27-63 s. Floor ratio threshold 2.0.
+- Oracle winner was kept on all five tune windows; top-1 gap 0.00 dB. VP9 prediction MAE 0.23 dB (3x2 reel) / 0.43 dB (2x2, default). Pruning drops 49-88% of oracle screening work.
+- Defaults: `--screen none`, `--finals 2`, `--finals-margin 0.5`, speculative parallel finals, 2x2 reel. Tune total 879 s vs oracle 2727 s (32%), worst gap 0.00 dB, all under the limit. `--screen crf` 56%, kept as a flag. cpu-used 4 loses 0.85 dB at 78% time, so 3 stays.
+- Open: heldout gate (<=40%) estimated borderline at 42-43%; w3-style easy windows untested; VP9 offset still +0.4 dB from one clip; cpu-used 2 floor rescue is a last-resort fallback only (w4 took 1075 s when it ran).

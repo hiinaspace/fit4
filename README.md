@@ -76,43 +76,62 @@ If you only lack one encoder, `--codecs x264` or `--codecs vp9` skips the other.
 
 ## How long it takes
 
-The default sweep is 16 screening encodes (2 codecs × 4 heights × 2 frame
-rates) plus 2 slow-preset finals. The example above, a 49 s 1080p60 clip, took
-12 minutes on 14 cores; time grows with clip length and resolution. libvpx is
-the slow part: VP9 used three quarters of that run's encode time, so
-`--codecs x264` is the biggest single saving. To sweep fewer candidates:
+By default fit4 does not screen the whole grid. A 30-40 s probe (below) predicts
+every candidate's quality at the size limit, and only the best one or two (VP9 at
+the source frame rate, almost always) get a full size-fitted encode. On the
+eval windows (14-30 s of 1080p60 gameplay) that took 18-50% (32% overall) of the time the old
+sweep needed (full grid, then finals), for the same XPSNR (never more than 0.00 dB lower) (see
+`eval/README.md`). libvpx is still the slow part: one 2-pass VP9 encode of 20 s
+of 1080p60 takes about 90 s on 4 threads.
 
 | flag | default | effect |
 |---|---|---|
-| `--codecs x264` | `x264,vp9` | halves the screen |
-| `--fps-divs 1` | `1,2` | skip half-frame-rate candidates; halves the screen |
-| `--scales 1,0.667` | `1,0.833,0.667,0.5` | fewer heights |
-| `--finals 1` | `2` | one slow final instead of two |
-| `--jobs N` | CPU budget | most encodes at once. Default: VP9 jobs take 4 threads each and as many run side by side as the CPU budget (cores, or a cgroup/`local-job` quota) allows; x264 jobs fill gaps |
-| `--full-grid` | off | screen every candidate instead of the ones the pre-flight probe keeps (below) |
-| `--prune-margin DB` | `1.5` | screen candidates predicted within this many dB of the best |
+| `--screen MODE` | `none` | what ranks the probe's survivors before the finals: `none` trusts the probe's prediction; `crf` runs one constant-quality encode per survivor at the CRF the probe predicts (about a third of a 2-pass screen's time; its top-3 order matched the 2-pass screen on 5 of 5 tune windows); `2pass` is the old size-fitted 2-pass screen |
+| `--finals N` | `2` | most finals. The best-predicted candidate always gets one; a second only if it is predicted within `--finals-margin` of it |
+| `--finals-margin DB` | `0.5` | see above |
+| `--full-grid` | off | skip the probe and screen every candidate with 2-pass encodes, then final the best (the old behaviour; clips under 10 s do this anyway) |
+| `--prune-margin DB` | `1.5` | with `--screen 2pass`/`crf`: screen candidates predicted within this many dB of the best |
 | `--prune-keep N` | `4` | ...but always at least the best N predicted |
+| `--probe-reel NxS` | `2x2` | probe sample: N slices of S seconds. `3x2` predicts a little better (mean error 0.23 dB against 0.43) for about 30% more probe time |
 | `--probe-only` | off | run the probe, write `probe.json` and `prune.json` into the work directory, stop |
+| `--codecs x264` | `x264,vp9` | restrict codecs |
+| `--fps-divs 1` | `1,2` | skip half-frame-rate candidates |
+| `--scales 1,0.667` | `1,0.833,0.667,0.5` | fewer heights |
+| `--jobs N` | CPU budget | most encodes at once with `--screen 2pass` |
 | `--flat-layout` | off | the old scheduling: `--jobs` (default 4) equal workers sharing the CPUs evenly |
-
-`fit4 clip.mp4 --codecs x264 --scales 1,0.667 --fps-divs 1 --finals 1` runs 2
-screens and 1 final.
 
 ### Pre-flight probe and pruning
 
-Clips of 10 s or more first get a short probe (a few seconds of sample slices,
-encoded at a few CRFs with fast settings, plus a per-second cost timeline).
-From it fit4 predicts each candidate's XPSNR at the limit and screens only the
-candidates within `--prune-margin` dB of the best (at least `--prune-keep`).
-VP9 candidates whose budget is under 1.6x libvpx's CRF-63 bitrate are dropped
-outright: libvpx 2-pass cannot get under the limit there. Every skipped
-candidate and its reason is logged and written to `prune.json`; if nothing
-pruned-in fits, the skipped ones are screened afterwards. `--full-grid` turns
-all of this off.
+Clips of 10 s or more first get a probe: a 4 s sample reel (two 2 s slices
+spread over the clip) encoded at three CRFs per geometry with fast settings and
+scored with XPSNR, plus a per-second cost timeline from one cheap x264 encode.
+From these fit4 predicts each candidate's XPSNR at the limit. It works in stages
+and only spends encodes where they can change the outcome:
 
-If a VP9 candidate still ends over the limit with the screening flags, it gets
-one more try with `-cpu-used 2`, which lowers libvpx's bitrate floor on noisy
-footage.
+1. VP9 at every height at the source frame rate, one CRF-63 point each. That
+   point's bitrate is libvpx's floor: a VP9 candidate whose budget is under 2x of
+   it is dropped outright (libvpx 2-pass cannot get under the limit there; on the
+   tune windows the infeasible ones sat at 1.45-1.88x and the feasible ones at
+   2.16x and above). One x264 geometry (the middle height) is probed as a pilot.
+2. Two more points for each feasible VP9 geometry and for the pilot.
+3. The other x264 heights only if the pilot is within 0.5 dB of the best VP9.
+   Half-frame-rate VP9 only if an estimate from the reel's judder score (the reel
+   against itself at half the rate, frame-doubled) says it could reach the best
+   full-rate VP9. Everything not probed is logged with the reason.
+
+Every candidate's decision is logged and written to `prune.json`. If no final
+gets under the limit, the rest of the grid is screened; if still none, VP9 is
+retried with `-cpu-used 2`, which lowers libvpx's bitrate floor on noisy
+footage (about 3x slower on 1080p; it rescued a candidate worth +0.45 dB in one
+window at the price of 15 minutes).
+
+### Finals
+
+A final is a 2-pass encode fitted into 97-100% of the limit. Instead of retrying
+one bitrate after another, fit4 runs a few bitrates of each finalist side by
+side (the budget bitrate and +2% for two finalists; three for one) and keeps the
+largest one under the limit; a second round only if none landed in the band. The
+first pass is shared between them.
 
 ## What the report shows
 
@@ -128,16 +147,20 @@ footage.
 
 1. Probe the source and normalize to limited-range bt709 yuv420p (full-range
    `yuvj420p` game and phone captures are the usual offenders).
-2. **Screen** codec × height × frame rate at fast presets. Each candidate is
-   2-pass encoded at the size budget, then re-encoded with a corrected bitrate
-   until it lands in 95–100% of the limit, so candidates are compared at equal
-   bytes (libvpx misses its target by ±10%).
-3. **Score** each at the source's display size and frame rate: XPSNR (reported
-   as (4Y+U+V)/6) and SSIM. Candidates are upscaled (bicubic) and frame-
-   duplicated first, so low-resolution and low-frame-rate ones pay for what a
-   viewer would see.
-4. **Final** slow-preset encodes of the best candidate and the best of the
-   other codec, corrected into 97.5–100% of the limit; the higher scorer wins.
+2. **Pre-flight probe** (clips of 10 s or more): predict every candidate's XPSNR
+   at the limit from a short sample, and drop the ones that cannot win or cannot
+   fit (above).
+3. **Rank** the survivors. By default the prediction itself ranks them
+   (`--screen none`); `--screen crf` encodes each once at constant quality and
+   moves the measured point to the budget along the probe's slope; `--screen
+   2pass` 2-pass encodes each at the size budget, then re-encodes with a
+   corrected bitrate until it lands in 95-100% of the limit (libvpx misses its
+   target by ±10%), so candidates are compared at equal bytes.
+4. **Final** encodes of the best one or two (x264 at `veryslow`, VP9 as in the
+   screen), fitted into 97-100% of the limit, **scored** at the source's display
+   size and frame rate: XPSNR (reported as (4Y+U+V)/6) and SSIM. Candidates are
+   upscaled (bicubic) and frame-duplicated first, so low-resolution and
+   low-frame-rate ones pay for what a viewer would see. The higher scorer wins.
 
 Keyframes are spaced about 20 s apart, which suits screen recordings and game
 captures with mostly static backgrounds.

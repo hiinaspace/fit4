@@ -1,0 +1,339 @@
+{
+ "window": {
+  "id": "w5-mushdark",
+  "path": "/mnt/pool/videos/2026-09-27 19-33-52.mp4",
+  "start": 40,
+  "duration": 18,
+  "split": "tune",
+  "kind": "dark / noisy",
+  "description": "Mushi Lantern night scene, 1080p60, near-black sky with star and firefly particles, a lit lantern at the end"
+ },
+ "args": [],
+ "exit": 0,
+ "locked_wall_s": 148.0,
+ "waited_for_lock_s": 1697.6,
+ "stdout": "/tmp/claude-1000/sc/local/w5-mushdark.src.fit4.webm",
+ "results": [
+  {
+   "stage": "final",
+   "label": "vp9-1080p60",
+   "bytes": 4117371,
+   "kbps": 1825.2,
+   "xpsnr_yuv": 38.995,
+   "xpsnr_y": 36.094,
+   "ssim_y": 0.98414,
+   "seconds": 202.8,
+   "attempts": [
+    [
+     1825.2217539209191,
+     4117371
+    ],
+    [
+     1861.7261889993376,
+     4198604
+    ]
+   ],
+   "floor_fix": false,
+   "rank_db": null
+  },
+  {
+   "stage": "final",
+   "label": "vp9-900p60",
+   "bytes": 4150387,
+   "kbps": 1825.2,
+   "xpsnr_yuv": 38.365,
+   "xpsnr_y": 35.153,
+   "ssim_y": 0.98305,
+   "seconds": 168.0,
+   "attempts": [
+    [
+     1825.2217539209191,
+     4150387
+    ],
+    [
+     1861.7261889993376,
+     4230718
+    ]
+   ],
+   "floor_fix": false,
+   "rank_db": null
+  }
+ ],
+ "probe": {
+  "start": 40.0,
+  "duration": 18.0,
+  "src_fps": 60.0,
+  "timeline": [
+   481.1864406779661,
+   493.9,
+   535.65,
+   606.7166666666667,
+   593.8833333333333,
+   633.9833333333333,
+   742.5666666666667,
+   941.457627118644,
+   752.85,
+   908.3389830508474,
+   1032.15,
+   813.7833333333333,
+   646.65,
+   910.6166666666667,
+   1075.3166666666666,
+   990.5166666666667,
+   941.5593220338983,
+   802.7833333333333
+  ],
+  "reel_complexity": 744.5277777777778,
+  "slices": [
+   [
+    43.5,
+    2.0
+   ],
+   [
+    52.5,
+    2.0
+   ]
+  ],
+  "curves": [
+   {
+    "codec": "vp9",
+    "height": 1080,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 29,
+      "key_bytes": 51635.0,
+      "inter_bytes": 11464.443514644352,
+      "xpsnr": 40.650333333333336,
+      "ssim": 0.0
+     },
+     {
+      "crf": 37,
+      "key_bytes": 31207.0,
+      "inter_bytes": 5222.828451882845,
+      "xpsnr": 38.45068333333334,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 5518.0,
+      "inter_bytes": 482.0460251046025,
+      "xpsnr": 31.75486666666667,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 900,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 25,
+      "key_bytes": 50893.0,
+      "inter_bytes": 11808.803347280334,
+      "xpsnr": 39.829100000000004,
+      "ssim": 0.0
+     },
+     {
+      "crf": 33,
+      "key_bytes": 30857.0,
+      "inter_bytes": 5368.121338912134,
+      "xpsnr": 38.07476666666667,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 4270.0,
+      "inter_bytes": 375.35564853556485,
+      "xpsnr": 31.26376666666667,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 720,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 21,
+      "key_bytes": 43345.0,
+      "inter_bytes": 10451.531380753138,
+      "xpsnr": 38.96008333333333,
+      "ssim": 0.0
+     },
+     {
+      "crf": 29,
+      "key_bytes": 28035.0,
+      "inter_bytes": 5213.523012552301,
+      "xpsnr": 37.6111,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 3184.0,
+      "inter_bytes": 286.11297071129707,
+      "xpsnr": 30.516199999999998,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 540,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 17,
+      "key_bytes": 34110.0,
+      "inter_bytes": 7912.426778242678,
+      "xpsnr": 37.66985,
+      "ssim": 0.0
+     },
+     {
+      "crf": 25,
+      "key_bytes": 23494.0,
+      "inter_bytes": 4456.251046025104,
+      "xpsnr": 36.72098333333333,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 2216.0,
+      "inter_bytes": 208.73221757322176,
+      "xpsnr": 29.71551666666667,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "x264",
+    "height": 900,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 22,
+      "key_bytes": 31783.5,
+      "inter_bytes": 8315.915966386554,
+      "xpsnr": 39.766816666666664,
+      "ssim": 0.0
+     },
+     {
+      "crf": 30,
+      "key_bytes": 13057.5,
+      "inter_bytes": 2578.7394957983192,
+      "xpsnr": 35.525333333333336,
+      "ssim": 0.0
+     },
+     {
+      "crf": 32,
+      "key_bytes": 10667.5,
+      "inter_bytes": 2027.5756302521008,
+      "xpsnr": 34.41278333333333,
+      "ssim": 0.0
+     }
+    ]
+   }
+  ]
+ },
+ "prune": [
+  {
+   "label": "x264-1080p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 0.9 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-1080p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-900p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 36.986514764480475
+  },
+  {
+   "label": "x264-900p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-720p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 0.9 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-720p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-540p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 0.9 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-540p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "vp9-1080p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 37.840371136672694
+  },
+  {
+   "label": "vp9-1080p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 35.5 dB, so about 34.1 dB at best against 37.8 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-900p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 37.48461731841619
+  },
+  {
+   "label": "vp9-900p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 35.5 dB, so about 33.9 dB at best against 37.8 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-720p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 37.13827720540608
+  },
+  {
+   "label": "vp9-720p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 35.5 dB, so about 33.8 dB at best against 37.8 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-540p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 36.66392635742566
+  },
+  {
+   "label": "vp9-540p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 35.5 dB, so about 33.5 dB at best against 37.8 for full-rate VP9",
+   "predicted": null
+  }
+ ],
+ "delivered_bytes": 4117371
+}

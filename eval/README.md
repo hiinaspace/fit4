@@ -308,3 +308,22 @@ Top screening: vp9-720p60 30.85; vp9-540p60 30.18; x264-540p60 29.47; x264-720p6
 - `baseline-dump.patch`: logging patch applied only to the baseline worktree (add with `git apply`).
 - `run_oracle.py` (driver), `summarize_oracle.py` (tables), `sheet.py` (frame contact sheets used to pick windows).
 - Video outputs were not kept in git; the small `dump.json` and `results.json` per window are copied to `/mnt/pool/videos/.fit4-sweep-eval/baseline/<id>/`.
+
+## 4. New pipeline on the tune windows (w4-w8)
+
+Staged cheap probe (2x2 reel), no screening (`--screen none`), at most 2 speculative parallel finals within 0.5 dB of the prediction, finals landing in [0.97 x limit, limit]. Each row is one run under `flock /tmp/fit4-heavy.lock local-job`, wall time includes the pre-flight probe. Raw: `new/default/<id>.json`. Heldout windows (w1-w3) were not run.
+
+| window | oracle wall s | new wall s | ratio | oracle winner | oracle dB | new winner | new dB | gap dB | delivered bytes | under limit |
+|---|---|---|---|---|---|---|---|---|---|---|
+| w4-quake | 749 | 207 | 28% | vp9-900p60 | 32.00 | vp9-900p60 | 32.05 | -0.06 | 4,185,179 | yes |
+| w5-mushdark | 318 | 148 | 47% | vp9-1080p60 | 38.99 | vp9-1080p60 | 38.99 | +0.00 | 4,117,371 | yes |
+| w6-ui | 474 | 155 | 33% | vp9-1080p60 | 51.08 | vp9-1080p60 | 51.08 | +0.00 | 4,146,580 | yes |
+| w7-flat | 484 | 242 | 50% | vp9-2048p60 | 36.03 | vp9-2048p60 | 36.03 | +0.00 | 4,127,528 | yes |
+| w8-street | 701 | 128 | 18% | vp9-720p60 | 30.85 | vp9-720p60 | 30.85 | +0.00 | 4,143,141 | yes |
+| total | 2727 | 879 | 32% | | | | | worst +0.00 | | |
+
+Variants (total wall vs oracle 2727 s, same winners, worst gap 0.00 dB): `--screen none` with 2 finals 966 s (35%), `--screen crf` 1517 s (56%, CRF screening costs more than it saves because the probe already ranks correctly), final default 879 s (32%).
+
+One-pass screening decision: XPSNR cost of CRF screening was 0 dB, but it adds time on every window, so it stays behind `--screen crf`, off by default.
+
+Not checked: heldout windows; clips whose winner is a 30 fps or x264 candidate; the estimated heldout ratio is 42-43%, close to the 40% gate (easy windows like w3 are the risk).

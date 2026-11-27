@@ -1,0 +1,299 @@
+{
+ "window": {
+  "id": "w8-street",
+  "path": "/mnt/pool/videos/2026-05-18 17-46-18.mp4",
+  "start": 60,
+  "duration": 24,
+  "split": "tune",
+  "kind": "slower 3D (detail-rich street)",
+  "description": "VRChat third-person walk through a dense Tokyo-style street, 1080p60, high-frequency signage and building detail, slow camera"
+ },
+ "args": [],
+ "exit": 0,
+ "locked_wall_s": 127.5,
+ "waited_for_lock_s": 473.3,
+ "stdout": "/tmp/claude-1000/sc/local/w8-street.src.fit4.webm",
+ "results": [
+  {
+   "stage": "final",
+   "label": "vp9-720p60",
+   "bytes": 4143141,
+   "kbps": 1368.9,
+   "xpsnr_yuv": 30.846,
+   "xpsnr_y": 27.154,
+   "ssim_y": 0.80282,
+   "seconds": 233.8,
+   "attempts": [
+    [
+     1368.9163154406892,
+     4143141
+    ],
+    [
+     1389.4500601722993,
+     4198722
+    ],
+    [
+     1409.98380490391,
+     4264265
+    ]
+   ],
+   "floor_fix": false,
+   "rank_db": null
+  }
+ ],
+ "probe": {
+  "start": 60.0,
+  "duration": 24.0,
+  "src_fps": 60.0,
+  "timeline": [
+   2016.084745762712,
+   1983.4,
+   2396.6,
+   2163.7833333333333,
+   1907.75,
+   1735.5833333333333,
+   1791.0166666666667,
+   1603.0666666666666,
+   1760.1833333333334,
+   2400.9,
+   2464.6,
+   2680.85,
+   2947.3166666666666,
+   2942.5833333333335,
+   3057.3333333333335,
+   3096.95,
+   3389.3166666666666,
+   3213.8166666666666,
+   3031.483333333333,
+   3017.5333333333333,
+   2563.576271186441,
+   2497.1666666666665,
+   2790.7166666666667,
+   2914.733333333333
+  ],
+  "reel_complexity": 2442.975,
+  "slices": [
+   [
+    65.0,
+    2.0
+   ],
+   [
+    77.0,
+    2.0
+   ]
+  ],
+  "curves": [
+   {
+    "codec": "vp9",
+    "height": 1080,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 63,
+      "key_bytes": 34456.0,
+      "inter_bytes": 1794.5146443514645,
+      "xpsnr": 30.08125,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 900,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 63,
+      "key_bytes": 25651.0,
+      "inter_bytes": 1384.7698744769875,
+      "xpsnr": 28.68488333333333,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 720,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 42,
+      "key_bytes": 85630.0,
+      "inter_bytes": 8286.271966527196,
+      "xpsnr": 34.07335,
+      "ssim": 0.0
+     },
+     {
+      "crf": 50,
+      "key_bytes": 52988.0,
+      "inter_bytes": 3875.9246861924685,
+      "xpsnr": 31.831816666666665,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 17915.0,
+      "inter_bytes": 875.8702928870293,
+      "xpsnr": 27.153233333333333,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "vp9",
+    "height": 540,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 35,
+      "key_bytes": 77979.0,
+      "inter_bytes": 10201.28870292887,
+      "xpsnr": 33.091249999999995,
+      "ssim": 0.0
+     },
+     {
+      "crf": 43,
+      "key_bytes": 52433.0,
+      "inter_bytes": 5057.569037656904,
+      "xpsnr": 31.522716666666668,
+      "ssim": 0.0
+     },
+     {
+      "crf": 63,
+      "key_bytes": 11373.0,
+      "inter_bytes": 558.9539748953974,
+      "xpsnr": 25.25508333333333,
+      "ssim": 0.0
+     }
+    ]
+   },
+   {
+    "codec": "x264",
+    "height": 900,
+    "fps": 60.0,
+    "points": [
+     {
+      "crf": 32,
+      "key_bytes": 43239.0,
+      "inter_bytes": 5310.403361344538,
+      "xpsnr": 31.61106666666667,
+      "ssim": 0.0
+     },
+     {
+      "crf": 34,
+      "key_bytes": 32202.0,
+      "inter_bytes": 4259.323529411765,
+      "xpsnr": 30.250383333333335,
+      "ssim": 0.0
+     },
+     {
+      "crf": 42,
+      "key_bytes": 10690.0,
+      "inter_bytes": 1522.390756302521,
+      "xpsnr": 24.445183333333333,
+      "ssim": 0.0
+     }
+    ]
+   }
+  ]
+ },
+ "prune": [
+  {
+   "label": "x264-1080p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 3.1 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-1080p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-900p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 27.97310147775082
+  },
+  {
+   "label": "x264-900p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-720p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 3.1 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-720p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "x264-540p60",
+   "keep": false,
+   "reason": "x264 pilot (900p) is 3.1 dB behind the best VP9",
+   "predicted": null
+  },
+  {
+   "label": "x264-540p30",
+   "keep": false,
+   "reason": "lower frame rate x264 is not probed",
+   "predicted": null
+  },
+  {
+   "label": "vp9-1080p60",
+   "keep": false,
+   "reason": "budget under 2x the VP9 CRF-63 bitrate: libvpx 2-pass would not get under the limit",
+   "predicted": null
+  },
+  {
+   "label": "vp9-1080p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 33.9 dB, so about 28.8 dB at best against 31.1 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-900p60",
+   "keep": false,
+   "reason": "budget under 2x the VP9 CRF-63 bitrate: libvpx 2-pass would not get under the limit",
+   "predicted": null
+  },
+  {
+   "label": "vp9-900p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 33.9 dB, so about 27.8 dB at best against 31.1 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-720p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 31.113207222957143
+  },
+  {
+   "label": "vp9-720p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 33.9 dB, so about 30.5 dB at best against 31.1 for full-rate VP9",
+   "predicted": null
+  },
+  {
+   "label": "vp9-540p60",
+   "keep": true,
+   "reason": "kept",
+   "predicted": 30.16185446119647
+  },
+  {
+   "label": "vp9-540p30",
+   "keep": false,
+   "reason": "30 fps: judder ceiling 33.9 dB, so about 29.9 dB at best against 31.1 for full-rate VP9",
+   "predicted": null
+  }
+ ],
+ "delivered_bytes": 4143141
+}

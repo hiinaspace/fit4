@@ -7,7 +7,6 @@ import sys
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
-from fractions import Fraction
 from pathlib import Path
 
 from fit4 import encode

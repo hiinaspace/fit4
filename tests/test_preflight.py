@@ -57,3 +57,17 @@ def test_json_round_trip_and_budget():
     q = Probe.from_json(p.to_json())
     assert q.curves[0].points[1].crf == 30 and q.slices == [(0.0, 3.0)]
     assert math.isclose(video_budget(LIMIT, 10), LIMIT * 8 * 0.985 / 1.006 / 10 / 1000)
+
+
+def test_prediction_is_capped_past_the_best_measured_point():
+    from fit4.preflight import EXTRAP_MAX_DB
+
+    p = mk([1.0] * 60)
+    c = p.curves[0]
+    top = max(p.kbps_at(c, pt, 0, 60) for pt in c.points)
+    top_db = max(pt.xpsnr for pt in c.points)
+    assert not p.at_ceiling(c, 0, 60, top * 0.9)
+    assert p.at_ceiling(c, 0, 60, top * 1.5)
+    assert p.predict(c, 0, 60, top * 1.5) <= top_db + EXTRAP_MAX_DB + 1e-9
+    assert p.predict(c, 0, 60, top * 50) <= top_db + EXTRAP_MAX_DB + 1e-9
+    assert p.predict(c, 0, 60, top * 50) >= p.predict(c, 0, 60, top * 1.5)

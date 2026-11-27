@@ -12,14 +12,22 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from rich.console import Console
-from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 from . import fastprobe, ff, preflight, prune, report
 from .boards import BOARDS, Board
 from .encode import EXT, FLOOR_FIX, Candidate, FirstPassCache, budget_kbps
 from .layout import available_cpus, plan_layout
 from .probe import BadInput, Source, probe, trim
-from .search import Trial, grid, pick_by_prediction, pick_finalists, run_finals, run_onepass, run_trials
+from .search import Trial, grid, hedge_finals, pick_by_prediction, pick_finalists, run_finals, run_onepass, run_trials
 
 # Exit codes (also in --help and the README).
 OK, FAILED, USAGE, NO_FFMPEG, INTERRUPTED = 0, 1, 2, 3, 130
@@ -246,17 +254,23 @@ def run_stage(name: str, src, cands, limit, work, **kw):
 
 def run_final_stage(src, fin, limit, work, budget, audio, cache):
     """Size-fit the finalists; if none gets under the limit, retry with libvpx's floor-lowering flags (slow)."""
+    prog = Progress(
+        TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), TimeElapsedColumn(), console=CONSOLE,
+        transient=True,
+    )  # fmt: skip
 
     def fit(cs, overrides=None):
+        task = prog.add_task("final encodes", total=len(cs))
         return run_finals(
             src, cs, limit, work, budget=budget, audio=audio, low=FINAL_LOW, max_rounds=FINAL_ROUNDS, log=log,
-            cache=cache, overrides=overrides,
+            cache=cache, overrides=overrides, on_done=lambda: prog.advance(task),
         )  # fmt: skip
 
-    finals = fit(fin)
-    if not finals and any(c.codec == "vp9" for c in fin):
-        log("no final fit; retrying VP9 with cpu-used 2 (slower)")
-        finals = fit([c for c in fin if c.codec == "vp9"], FLOOR_FIX)
+    with prog:
+        finals = fit(fin)
+        if not finals and any(c.codec == "vp9" for c in fin):
+            log("no final fit; retrying VP9 with cpu-used 2 (slower)")
+            finals = fit([c for c in fin if c.codec == "vp9"], FLOOR_FIX)
     if not finals:
         raise RuntimeError("no final encode got under the size limit; try a larger --limit or a shorter clip")
     return finals
@@ -300,38 +314,52 @@ def codecs_for(args: argparse.Namespace, board: Board) -> list[str]:
 
 def preflight_prune(
     src: Source, cands: list[Candidate], limit: int, work: Path, layout, audio: bool, args: argparse.Namespace
-) -> tuple[list[Candidate], list[Candidate], preflight.Probe | None, dict[str, float]]:
+) -> tuple[list[Candidate], list[Candidate], preflight.Probe | None, dict[str, float], set[str]]:
     """Run the fast probe and split the grid into (screen these, skipped, the probe). Falls back to the full grid on failure."""
     t0 = time.monotonic()
     audio_kbps = preflight.audio_kbps_for(src, audio)
     try:
-        fp = fastprobe.run_fast_probe(
-            src,
-            cands,
-            limit,
-            work / "probe",
-            layout,
-            audio_kbps=audio_kbps,
-            n_slices=args.probe_reel[0],
-            slice_len=args.probe_reel[1],
-            log=log,
-        )
+        with Progress(
+            SpinnerColumn(), TextColumn("{task.description}"), TimeElapsedColumn(), console=CONSOLE, transient=True
+        ) as prog:
+            task = prog.add_task("probing the clip", total=None)
+            fp = fastprobe.run_fast_probe(
+                src,
+                cands,
+                limit,
+                work / "probe",
+                layout,
+                audio_kbps=audio_kbps,
+                n_slices=args.probe_reel[0],
+                slice_len=args.probe_reel[1],
+                log=log,
+                on_stage=lambda name: prog.update(task, description=f"probing the clip (done: {name})"),
+            )
     except (subprocess.CalledProcessError, RuntimeError) as e:
         log(f"probe failed ({e}); screening the full grid")
-        return cands, [], None, {}
+        return cands, [], None, {}, set()
     (work / "probe.json").write_text(fp.probe.to_json())
     decisions = prune.decide(
         fp.probe, cands, limit, audio_kbps=audio_kbps, offsets=fastprobe.OFFSET_DB,
         margin=args.prune_margin, min_keep=args.prune_keep, unprobed=fp.unprobed,
     )  # fmt: skip
     kept = [d.cand for d in decisions if d.keep]
-    log(f"probe: {time.monotonic() - t0:.0f}s; keeping {len(kept)} of {len(cands)} candidates")
+    log(f"probe: {time.monotonic() - t0:.0f}s; {len(kept)} of {len(cands)} candidates still in the running")
     for d in sorted(decisions, key=lambda d: (not d.keep, -(d.predicted or -1e9))):
-        log("  " + d.line())
+        if d.keep:
+            log("  " + d.line())
+    if len(kept) < len(cands):
+        log(f"  {len(cands) - len(kept)} ruled out (reasons in {work / 'prune.json'})")
     (work / "prune.json").write_text(
         json.dumps(
             [
-                {"label": d.cand.label(), "keep": d.keep, "reason": d.reason, "predicted": d.predicted}
+                {
+                    "label": d.cand.label(),
+                    "keep": d.keep,
+                    "reason": d.reason,
+                    "predicted": d.predicted,
+                    "ceiling": d.ceiling,
+                }
                 for d in decisions
             ],
             indent=1,
@@ -339,9 +367,10 @@ def preflight_prune(
     )
     if not kept:
         log("probe kept nothing; screening the full grid")
-        return cands, [], None, {}
+        return cands, [], None, {}, set()
     pred = {d.cand.label(): d.predicted for d in decisions if d.predicted is not None}
-    return kept, [d.cand for d in decisions if not d.keep], fp.probe, pred
+    ceiling = {d.cand.label() for d in decisions if d.ceiling}
+    return kept, [d.cand for d in decisions if not d.keep], fp.probe, pred, ceiling
 
 
 def run(args: argparse.Namespace) -> int:
@@ -387,8 +416,9 @@ def run(args: argparse.Namespace) -> int:
     skipped: list[Candidate] = []
     pf: preflight.Probe | None = None
     pred: dict[str, float] = {}
+    ceiling: set[str] = set()
     if args.probe_only or not (args.full_grid or src.duration < PROBE_MIN_SECONDS):
-        kept, skipped, pf, pred = preflight_prune(src, cands, limit, work, layout, audio, args)
+        kept, skipped, pf, pred, ceiling = preflight_prune(src, cands, limit, work, layout, audio, args)
         if args.probe_only:
             return OK
         cands = kept
@@ -402,6 +432,7 @@ def run(args: argparse.Namespace) -> int:
             # The probe's prediction ranks the survivors; only its top --finals are encoded.
             ranked = sorted(((c, pred[c.label()]) for c in cands if c.label() in pred), key=lambda t: -t[1])
             fin = pick_by_prediction(ranked, args.finals, args.finals_margin) or cands[: args.finals]
+            fin = hedge_finals(fin, ranked, ceiling, args.finals)
             log(f"no screening: final encodes of the probe's top {len(fin)}: {', '.join(c.label() for c in fin)}")
         else:
             log(f"screening {len(cands)} candidates ({mode}; {layout.describe()})")
@@ -422,10 +453,16 @@ def run(args: argparse.Namespace) -> int:
             if mode == "crf":
                 ranked = sorted(((t.cand, t.key) for t in screen), key=lambda t: -t[1])
                 fin = pick_by_prediction(ranked, args.finals, args.finals_margin)
+                fin = hedge_finals(fin, ranked, ceiling, args.finals)
             else:
                 fin = pick_finalists(screen, args.finals)
             log(f"final encodes: {', '.join(c.label() for c in fin)}")
-        finals = run_final_stage(src, fin, limit, work, layout.budget, audio, cache)
+        try:
+            finals = run_final_stage(src, fin, limit, work, layout.budget, audio, cache)
+        except RuntimeError:
+            if mode != "none":
+                raise
+            finals = []
         if not finals and mode == "none":
             log("no final fit; screening the rest of the grid")
             rest = [c for c in cands + skipped if c not in fin]

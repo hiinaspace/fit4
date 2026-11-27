@@ -119,11 +119,16 @@ and only spends encodes where they can change the outcome:
    against itself at half the rate, frame-doubled) says it could reach the best
    full-rate VP9. Everything not probed is logged with the reason.
 
-Every candidate's decision is logged and written to `prune.json`. If no final
-gets under the limit, the rest of the grid is screened; if still none, VP9 is
-retried with `-cpu-used 2`, which lowers libvpx's bitrate floor on noisy
-footage (about 3x slower on 1080p; it rescued a candidate worth +0.45 dB in one
-window at the price of 15 minutes).
+Every candidate's decision is written to `prune.json` (the log lists the
+survivors). When the budget is above the best point the probe measured (easy
+content), a prediction is capped at +0.5 dB past that point and marked "at
+ceiling": a lower-frame-rate VP9 is then not ruled out against it, and the best
+candidate at another frame rate gets a final too. If no final gets under the
+limit, VP9 finalists are retried with `-cpu-used 2`, which lowers libvpx's
+bitrate floor on noisy footage (about 3x slower on 1080p; it rescued a
+candidate worth +0.45 dB in one window at the price of 15 minutes); if that
+fails too, with `--screen none` the rest of the grid is screened and the best
+of it final-encoded.
 
 ### Finals
 

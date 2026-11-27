@@ -90,7 +90,7 @@ def test_probe_prunes_and_writes_its_decisions(tmp_path, capsys):
     assert all(d["reason"] for d in decisions) and (work / "probe.json").exists()
     screens = {r["label"] for r in json.loads((work / "results.json").read_text()) if r["stage"] == "screen"}
     assert screens == {d["label"] for d in decisions if d["keep"]}
-    assert "skip:" in err and "first passes:" in err
+    assert "ruled out" in err and "first passes:" in err
 
 
 def test_full_grid_flag_skips_the_probe(tmp_path, capsys):

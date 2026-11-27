@@ -79,3 +79,18 @@ def test_unprobed_candidates_carry_their_reason():
 def test_nothing_probed_keeps_nothing_but_does_not_crash():
     ds = decide(probe_with([]), [cand("x264", 720)], LIMIT)
     assert not ds[0].keep and ds[0].reason == "no probe curve"
+
+
+def test_a_capped_leader_keeps_the_best_of_each_frame_rate():
+    from fit4.preflight import video_budget
+
+    cands = [cand("x264", h, 60) for h in (1080, 900, 720, 540)] + [cand("x264", 720, 30)]
+    curves = [curve("x264", h, 60, 4000.0, top_db=40.0 - i) for i, h in enumerate((1080, 900, 720, 540))]
+    curves.append(curve("x264", 720, 30, 4000.0, top_db=20.0))
+    p = probe_with(curves)
+    huge = 10_000_000_000  # budget far above every measured point: the leader is capped
+    ds = decide(p, cands, huge, margin=0.5, min_keep=1)
+    assert ds[0].ceiling
+    kept = {d.cand for d in ds if d.keep}
+    assert cand("x264", 720, 30) in kept
+    assert video_budget(huge, 60, 0) > 0

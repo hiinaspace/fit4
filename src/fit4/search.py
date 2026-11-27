@@ -169,9 +169,16 @@ def pick_finalists(trials: list[Trial], n: int) -> list[Candidate]:
 # -- speculative final fitting ---------------------------------------------------
 
 # Bitrate multipliers tried side by side in the first round, by how many fit per candidate.
-# libvpx 2-pass at the budget bitrate lands at 0.95-0.99 of the limit (median 0.976, 64 first
-# tries on the eval windows), so nudging up covers the band without a serial retry.
+# libvpx 2-pass at the budget bitrate lands at 0.95-0.999 of the limit (median 0.983, 55 first
+# tries under the limit, oracle screens of the five tune windows only), so nudging up covers the
+# band without a serial retry.
 FIRST_ROUND = {1: [1.0], 2: [1.0, 1.02], 3: [1.0, 1.015, 1.03]}
+
+
+# A candidate still under UNUSED_BELOW of the limit after the normal rounds, with an over-limit
+# result bracketing it, gets up to EXTRA_ROUNDS more (libvpx size can jump with bitrate on easy content).
+EXTRA_ROUNDS = 2
+UNUSED_BELOW = 0.9
 
 
 def next_rates(points: list[tuple[float, int]], limit: int, low: float, width: int) -> list[float]:
@@ -187,6 +194,7 @@ def next_rates(points: list[tuple[float, int]], limit: int, low: float, width: i
     if under and over:
         (k0, s0), (k1, s1) = max(under, key=lambda p: p[1]), min(over, key=lambda p: p[1])
         t = (math.log(mid) - math.log(s0)) / (math.log(s1) - math.log(s0))
+        t = min(0.85, max(0.15, t))  # size can jump with bitrate: keep the bracket shrinking, not creeping
         k = math.exp(math.log(k0) + t * (math.log(k1) - math.log(k0)))
     else:
         k0, s0 = max(points, key=lambda p: p[1]) if under else min(points, key=lambda p: p[1])
@@ -209,6 +217,7 @@ def run_finals(
     cache: FirstPassCache | None = None,
     overrides: dict[str, str] | None = None,
     on_done: Callable[[], None] = lambda: None,
+    extra_rounds: int = EXTRA_ROUNDS,
 ) -> list[Trial]:
     """Fit every candidate to the size band with 2-pass encodes tried side by side, in rounds.
 
@@ -225,7 +234,14 @@ def run_finals(
     secs: dict[Candidate, float] = dict.fromkeys(cands, 0.0)
     done: set[Candidate] = set()
     n_try = 0
-    for rnd in range(max_rounds):
+    for rnd in range(max_rounds + extra_rounds):
+        if rnd >= max_rounds:
+            # Extra rounds only for a candidate that is bracketed and still leaves a lot of the budget unused.
+            for c in cands:
+                fit = [sz for _, sz, _ in results[c] if sz <= limit]
+                over = any(sz > limit for _, sz, _ in results[c])
+                if c not in done and not (fit and over and max(fit) < UNUSED_BELOW * limit):
+                    done.add(c)
         jobs: list[tuple[Candidate, float, Path]] = []
         for c in cands:
             if c in done:
@@ -308,3 +324,20 @@ def pick_by_prediction(ranked: list[tuple[Candidate, float]], n: int, margin: fl
         return []
     top = ranked[0][1]
     return [c for c, q in ranked[:n] if q >= top - margin or c == ranked[0][0]]
+
+
+def hedge_finals(
+    fin: list[Candidate], ranked: list[tuple[Candidate, float]], ceiling: set[str], n: int
+) -> list[Candidate]:
+    """Add the best-ranked candidate at a different frame rate when the leader's figure is a capped guess.
+
+    When the budget is above the best measured point the leader's prediction only says "very good", so
+    a lower frame rate (each frame gets twice the bits, but it judders) can really be ahead of it.
+    The real finals then decide; one extra encode is the price. Only with n >= 2.
+    """
+    if n < 2 or not fin or fin[0].label() not in ceiling:
+        return fin
+    if any(abs(float(c.fps) - float(fin[0].fps)) > 1e-3 for c in fin):
+        return fin
+    other = [c for c, _ in ranked if abs(float(c.fps) - float(fin[0].fps)) > 1e-3]
+    return [*fin, other[0]] if other else fin

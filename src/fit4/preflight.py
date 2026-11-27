@@ -35,7 +35,11 @@ from .metrics import score
 from .probe import Source, probe
 
 CRFS = {"x264": (22, 30, 38, 46), "vp9": (30, 42, 54, 63)}
-VP9_FLOOR = 2.0
+VP9_FLOOR = 2.0  # keep equal to sketches/shared/predict.js
+# Past the best measured point (a budget above the lowest-CRF bitrate) quality saturates: the slope
+# of the last segment is not a forecast. Allow at most this many dB beyond the best measured point
+# (tune window w6-ui, 540p60 at 1.14x the top point's bitrate gained 0.04 dB).
+EXTRAP_MAX_DB = 0.5
 GOP_SECONDS = 20  # matches encode.codec_args
 TIMELINE_HEIGHT = 540
 TIMELINE_CRF = 30
@@ -109,7 +113,15 @@ class Probe:
         else:
             i = max(j for j in range(len(xs) - 1) if xs[j] <= x)
         slope = (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]) if xs[i + 1] != xs[i] else 0.0
-        return ys[i] + slope * (x - xs[i])
+        q = ys[i] + slope * (x - xs[i])
+        if x > xs[-1]:
+            q = min(q, ys[-1] + EXTRAP_MAX_DB)
+        return q
+
+    def at_ceiling(self, curve: CandCurve, a: float, b: float, video_kbps: float) -> bool:
+        """True when the budget is above the best measured point's bitrate: the prediction is a capped guess."""
+        top = max(self.kbps_at(curve, p, a, b) for p in curve.points)
+        return video_kbps > top
 
     def best(self, a: float, b: float, limit: int, audio_codec_kbps: dict[str, float] | None = None):
         """(predicted XPSNR, curve, video kbps) of the best candidate for window [a, b)."""

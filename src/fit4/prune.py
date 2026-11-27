@@ -22,10 +22,12 @@ class Decision:
     keep: bool
     reason: str  # "kept", "floor", "margin", "unprobed" ...
     predicted: float | None  # dB (probe prediction plus the fast-setting offset); None if infeasible/unprobed
+    ceiling: bool = False  # the budget is above the best measured point: the figure is a capped guess
 
     def line(self) -> str:
         p = "   n/a" if self.predicted is None else f"{self.predicted:6.2f}"
-        return f"{self.cand.label():<18} predicted {p} dB  {'keep' if self.keep else 'skip'}: {self.reason}"
+        cap = " (at ceiling)" if self.ceiling else ""
+        return f"{self.cand.label():<18} predicted {p} dB{cap}  {'keep' if self.keep else 'skip'}: {self.reason}"
 
 
 def curve_for(probe: Probe, cand: Candidate):
@@ -58,6 +60,7 @@ def decide(
     offs = offsets or {}
     a, b = probe.start, probe.start + probe.duration
     scored: list[tuple[float | None, Candidate, str]] = []
+    ceil: set[Candidate] = set()
     for c in cands:
         if unprobed and c in unprobed:
             scored.append((None, c, unprobed[c]))
@@ -72,20 +75,31 @@ def decide(
             scored.append((None, c, "floor"))
         else:
             scored.append((q + offs.get(c.codec, 0.0), c, "kept"))
+            if probe.at_ceiling(curve, a, b, kb):
+                ceil.add(c)
     ranked = sorted((s for s in scored if s[0] is not None), key=lambda s: s[0], reverse=True)
     best = ranked[0][0] if ranked else None
     keep_set = set()
     for i, (q, c, _) in enumerate(ranked):
         if i < min_keep or (best is not None and q is not None and q >= best - margin):
             keep_set.add(c)
+    if ranked and ranked[0][1] in ceil:
+        # The top figure is a capped guess, so a lower frame rate (whose estimate is not capped the same
+        # way) is not safely behind it: keep the best of each frame rate.
+        seen: set[float] = set()
+        for _, c, _ in ranked:
+            if float(c.fps) not in seen:
+                seen.add(float(c.fps))
+                keep_set.add(c)
     out = []
     for q, c, why in scored:
         if q is None:
             out.append(Decision(c, False, _explain(why), None))
         elif c in keep_set:
-            out.append(Decision(c, True, "kept", q))
+            out.append(Decision(c, True, "kept", q, c in ceil))
         else:
-            out.append(Decision(c, False, f"{best - q:.2f} dB behind the predicted best (margin {margin:g})", q))  # ty: ignore[unsupported-operator]
+            gap = (best or 0.0) - q
+            out.append(Decision(c, False, f"{gap:.2f} dB behind the predicted best (margin {margin:g})", q, c in ceil))
     return out
 
 

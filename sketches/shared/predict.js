@@ -1,5 +1,5 @@
 // Port of fit4.preflight.Probe predictions (keep in step with preflight.py).
-export const GOP_SECONDS = 20, VP9_FLOOR = 1.6, OVERHEAD = 0.006;
+export const GOP_SECONDS = 20, VP9_FLOOR = 2.0, EXTRAP_MAX_DB = 0.5, OVERHEAD = 0.006;
 export const AUDIO_KBPS = { x264: 96, vp9: 64 };
 
 export const label = (c) => `${c.codec}-${c.height}p${+c.fps.toFixed(3)}`;
@@ -31,7 +31,14 @@ export function predict(p, curve, a, b, videoKbps) {
   else if (x >= xs[xs.length - 1]) i = xs.length - 2;
   else { i = 0; for (let j = 0; j < xs.length - 1; j++) if (xs[j] <= x) i = j; }
   const slope = xs[i + 1] !== xs[i] ? (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]) : 0;
-  return ys[i] + slope * (x - xs[i]);
+  const q = ys[i] + slope * (x - xs[i]);
+  // Past the best measured point quality saturates; cap the extrapolation (same as preflight.py).
+  return x > xs[xs.length - 1] ? Math.min(q, ys[ys.length - 1] + EXTRAP_MAX_DB) : q;
+}
+
+/** True when videoKbps is above the best measured point: the prediction is a capped guess. */
+export function atCeiling(p, curve, a, b, videoKbps) {
+  return videoKbps > Math.max(...curve.points.map((pt) => kbpsAt(p, curve, pt, a, b)));
 }
 
 /** Every candidate's prediction for [a,b), best first. audio: include the codec's audio bitrate. */

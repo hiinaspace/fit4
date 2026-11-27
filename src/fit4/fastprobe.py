@@ -184,6 +184,7 @@ def run_fast_probe(
     n_slices: int = 3,
     slice_len: float = 2.0,
     log: Callable[[str], None] = lambda s: None,
+    on_stage: Callable[[str], None] = lambda s: None,
 ) -> FastProbe:
     """Probe in stages, spending encodes only where they can change the pruning.
 
@@ -204,6 +205,7 @@ def run_fast_probe(
         now = time.monotonic()
         secs[name] = secs.get(name, 0.0) + now - t
         t = now
+        on_stage(name)
 
     budget = layout.budget
     tl = timeline(src, work, threads=budget)
@@ -261,6 +263,7 @@ def run_fast_probe(
         return None if q is None else q + OFFSET_DB.get(c.codec, 0.0)
 
     unprobed: dict[Candidate, str] = {}
+    video_kbps_vp9 = video_budget(limit, b - a, akb.get("vp9", 0.0))
     # Stage A
     pilot = sorted(x264, key=lambda c: c.height)[len(x264) // 2 :][:1]  # the middle height
     add([(c, VP9_FLOOR_CRF) for c in vp9] + [(c, REF_CRF["x264"]) for c in pilot])
@@ -270,8 +273,11 @@ def run_fast_probe(
     add(next_crfs(feasible) + next_crfs(pilot))
     lap("B: bracketing points")
     interim = build()
-    qv = [q for c in feasible if (q := quality(c, interim)) is not None]
-    best_vp9 = max(qv) if qv else None
+    qv = [(q, c) for c in feasible if (q := quality(c, interim)) is not None]
+    best_vp9 = max(qv, key=lambda t: t[0])[0] if qv else None
+    # When the best full-rate figure is capped (budget above the best measured point) it is a ceiling,
+    # not a forecast, and a lower frame rate cannot be ruled out against it.
+    best_capped = bool(qv) and interim.at_ceiling(curves[max(qv, key=lambda t: t[0])[1]], a, b, video_kbps_vp9)
     # Stage C
     more_x264 = [c for c in x264 if c not in pilot]
     qx = quality(pilot[0], interim) if pilot else None
@@ -292,6 +298,7 @@ def run_fast_probe(
         }
         lap("judder")
         lower_vp9 = []
+        notes: list[str] = []
         for c in lower:
             if c.codec != "vp9":
                 unprobed[c] = "lower frame rate x264 is not probed"
@@ -304,15 +311,19 @@ def run_fast_probe(
                 limit,
                 akb.get("vp9", 0.0),
             )
-            log(
-                f"probe: {c.label()} judder ceiling {jud[float(c.fps)]:.1f} dB, estimate {est if est is None else round(est, 1)}"
-            )
-            if est is not None and best_vp9 is not None and est < best_vp9 - JUDDER_SLACK_DB:
+            notes.append(f"{c.label()} {est if est is None else round(est, 1)}")
+            if est is not None and best_vp9 is not None and not best_capped and est < best_vp9 - JUDDER_SLACK_DB:
                 unprobed[c] = (
                     f"{float(c.fps):g} fps: judder ceiling {jud[float(c.fps)]:.1f} dB, so about {est:.1f} dB at best against {best_vp9:.1f} for full-rate VP9"
                 )
             else:
                 lower_vp9.append(c)
+        if notes:
+            log(
+                "probe: lower-rate estimates (dB): "
+                + ", ".join(notes)
+                + ("; full-rate VP9 is at its ceiling, so none is ruled out on that" if best_capped else "")
+            )
         if lower_vp9:
             add([(c, VP9_FLOOR_CRF) for c in lower_vp9])
             f2, _ = vp9_order(build(), lower_vp9, {}, limit, akb.get("vp9", 0.0))
